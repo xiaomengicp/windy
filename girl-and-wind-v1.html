@@ -1903,7 +1903,11 @@
                         if (val === 5) { ctx.fillStyle = '#44f'; ctx.fillRect(x + 15, y + 50, CELL_SIZE - 30, 20); } // Plank
                         if (val === 6) { ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 10, 0, Math.PI * 2); ctx.fill(); } // Switch
                         if (val === 9) { ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 8, 0, Math.PI * 2); ctx.fill(); } // Collectible
-                        if (val === 10) { ctx.fillStyle = '#7b5544'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); } // Door
+                        if (val === 10) {
+                            ctx.fillStyle = '#7b5544'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+                            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+                            ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.fillText("D", x + 15, y + 25);
+                        } // Door
                     }
                 }
                 ctx.restore();
@@ -1914,8 +1918,9 @@
                 ctx.textAlign = 'left';
                 ctx.fillText(`EDITOR MODE [E] to Close`, 20, 30);
                 ctx.fillText(`Selected: [${this.selectedType}] ${this.typeNames[this.selectedType]}`, 20, 50);
-                ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Sta, 3-Reg, 4-Gap, 5-Plnk, 6-Sw, 7-Start, 8-Exit, 9-Col, D-Door`, 20, 70);
-                ctx.fillText(`[P] Print Config`, 20, 90);
+                ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Stat, 3-Reg, 4-Gap, 5-Plank`, 20, 70);
+                ctx.fillText(`      6-Sw, 7-Start, 8-Exit, 9-Col, D-Door`, 20, 90);
+                ctx.fillText(`[P] Print Config`, 20, 110);
             }
 
             exportConfig() {
