@@ -234,229 +234,362 @@
                 this.y = y;
                 this.width = GIRL_SIZE;
                 this.height = GIRL_SIZE;
-                // Goal will be set by level loader
-                this.goalX = 0;
-                this.goalY = 0;
-                this.currentGoalX = 0;
-                this.currentGoalY = 0;
+                this.goalX = GAME_WIDTH - 50;
+                this.goalY = GAME_HEIGHT / 2;
+
+                // Final Goal (The Exit) - Persistent
+                this.finalGoalX = this.goalX;
+                this.finalGoalY = this.goalY;
+
+                // currentGoal is the IMMEDIATE waypoint we are walking towards
+                this.currentGoalX = this.goalX;
+                this.currentGoalY = this.goalY;
+
+                // Waypoint Queue for L-Shaped movement
+                this.pathQueue = [];
+
                 this.state = 'WALKING';
                 this.speed = GIRL_SPEED;
+                this.color = '#ff6b9d';
                 this.stateTimer = 0;
+
+                this.stateTimer = 0;
+
                 this.detourPath = null;
+                this.hasDetoured = false; // Flag to prevent re-taking the same detour
                 this.reachedWaypoint = false;
 
                 // Animation
                 this.bobOffset = 0;
-                this.eyeOffset = 0;
+                this.eyeOffset = { x: 0, y: 0 };
+                this.blinkTimer = 0;
+                this.expression = '';
             }
 
-            update(dt, obstacles, blockages, gaps = []) {
-                this.stateTimer += dt;
+            update(dt, obstacles, blockages, gaps) {
+                // Update animation state
+                this.bobOffset = Math.sin(Date.now() / 150) * 2;
+                if (Math.random() < 0.01) this.blinkTimer = 10;
+                if (this.blinkTimer > 0) this.blinkTimer--;
 
-                // Simple bobbing animation
-                this.bobOffset = Math.sin(Date.now() / 200) * 2;
-
+                // Logic State Machine
                 switch (this.state) {
                     case 'WALKING':
-                    case 'WALKING_DETOUR':
-                        this.eyeOffset = Math.sin(Date.now() / 150) * 2;
-                        if (this.state === 'WALKING') this.updateWalking(dt, obstacles, gaps);
-                        else this.updateWalkingDetour(dt, obstacles);
+                        this.updateWalking(dt, obstacles, gaps);
 
-                        // Spawn trail particles occasionally
+                        // Spawn trail particles
                         if (Math.random() < 0.1) {
                             particles.spawn(this.x + this.width / 2, this.y + this.height, 'dust');
                         }
+
+                        // Check if we ran into a blockage (collision handled in walking, but this is for specific state trigger)
+                        // Actually, updateWalking handles collision by stopping.
+                        // We need to check if we are "stuck" or "blocked" by logic, not just physics.
+                        // If pathQueue is empty but we haven't reached final goal, we might be blocked.
+
+                        // Check collision with Blockages specifically to trigger "BLOCKED" state
+                        for (let b of blockages) {
+                            if (b.blocked && this.checkCollision(this.x, this.y, [b], [])) {
+                                this.state = 'BLOCKED';
+                                this.stateTimer = 0;
+                                this.expression = '!';
+                                // Bounce back a bit
+                                this.x -= Math.sign(this.currentGoalX - this.x) * 5;
+                                this.y -= Math.sign(this.currentGoalY - this.y) * 5;
+                                this.pathQueue = []; // Clear path
+                            }
+                        }
                         break;
-                    case 'STOPPED':
-                        if (this.stateTimer > 0.3) {
+
+                    case 'BLOCKED':
+                        // 1. Bounce -> Stop
+                        // 2. Expression '?'
+                        this.stateTimer += dt;
+                        this.expression = '?';
+                        if (this.stateTimer > 1.0) {
                             this.state = 'TRY_PUSH';
                             this.stateTimer = 0;
                         }
                         break;
+
                     case 'TRY_PUSH':
+                        // 3. Expression '>' (Trying to move forward)
+                        this.expression = '>';
+                        this.stateTimer += dt;
+
+                        // Small "pushing" animation
+                        this.x += (Math.random() - 0.5) * 1;
+                        this.y += (Math.random() - 0.5) * 1;
+
+                        if (this.stateTimer > 0.8) {
+                            this.state = 'THINKING';
+                            this.stateTimer = 0;
+                        }
+                        break;
+
+                    case 'STOPPED':
+                        // Generic stop from collision or just idle
+                        this.stateTimer += dt;
+                        this.expression = '?';
                         if (this.stateTimer > 1.0) {
-                            this.state = 'OBSERVE';
+                            this.state = 'TRY_PUSH';
                             this.stateTimer = 0;
                         }
                         break;
-                    case 'OBSERVE':
-                        this.eyeOffset = 0;
-                        if (this.stateTimer > 1.5) {
-                            this.checkSolutions(blockages, gaps);
-                        }
-                        break;
-                    case 'HESITATE':
-                        if (this.stateTimer > 1.5) {
-                            if (this.detourPath) {
-                                this.state = 'WALKING_DETOUR';
-                            } else {
-                                this.state = 'WALKING';
-                            }
-                            this.stateTimer = 0;
-                        }
-                        break;
-                }
-            }
 
-            checkSolutions(blockages, gaps) {
-                let foundSolution = false;
+                    case 'THINKING':
+                        this.stateTimer += dt;
+                        this.expression = '...';
 
-                for (let blockage of blockages) {
-                    if (!blockage.blocked && blockage.revealsPath) {
-                        this.detourPath = blockage.revealsPath;
-                        this.state = 'HESITATE';
-                        this.stateTimer = 0;
-                        foundSolution = true;
-                        break;
-                    }
-                }
-
-                if (!foundSolution && gaps) {
-                    for (let gap of gaps) {
-                        if (gap.isFilled) {
+                        // Check for world changes (detours opened, gaps filled)
+                        if (this.checkEnvironment(blockages, gaps)) {
+                            // EVENT: Path Cleared
                             this.state = 'HESITATE';
                             this.stateTimer = 0;
-                            foundSolution = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!foundSolution) this.stateTimer = 0;
-            }
-
-            updateWalking(dt, obstacles, gaps) {
-                const dx = this.currentGoalX - this.x;
-                const dy = this.currentGoalY - this.y;
-
-                // Manhattan Movement Logic
-                // Prioritize the axis with larger distance, but don't move diagonally
-
-                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-                    let moveX = 0;
-                    let moveY = 0;
-
-                    // Decide axis
-                    // If we are significantly off on X, try X.
-                    // If we are significantly off on Y, try Y.
-                    // To avoid zig-zag on floating point errors, use a threshold or state?
-                    // Simple approach: Move X until aligned, then Y. Or vice-versa.
-
-                    // Let's verify which axis is free.
-                    // But "Thomas Was Alone" style movement is usually one axis at a time cleanly.
-
-                    // Strategy: If |dx| > |dy|, try X first.
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        moveX = Math.sign(dx) * this.speed * dt;
-                    } else {
-                        moveY = Math.sign(dy) * this.speed * dt;
-                    }
-
-                    // If we only chose one, and it's colliding, try the other?
-                    // For now, strict Manhattan: X then Y or based on distance.
-                    // Let's stick to: Move along X if X-dist is significant, else Y.
-                    // Actually, let's prioritize strictly one axis to prevent "sliding" along walls diagonally.
-
-                    if (Math.abs(dx) > 1) { // 1px threshold
-                        moveX = Math.sign(dx) * this.speed * dt;
-                        moveY = 0;
-                    } else if (Math.abs(dy) > 1) {
-                        moveX = 0;
-                        moveY = Math.sign(dy) * this.speed * dt;
-                    } else {
-                        // Close enough
-                        moveX = dx;
-                        moveY = dy;
-                    }
-
-                    const nextX = this.x + moveX;
-                    const nextY = this.y + moveY;
-
-                    if (!this.checkCollision(nextX, nextY, obstacles, gaps)) {
-                        this.x = nextX;
-                        this.y = nextY;
-                    } else {
-                        // If colliding on preferred axis, try the other axis?
-                        // This helps if trying to go X but hit a wall, maybe we should go Y?
-                        // For this specific game level layout, strict waypoints usually handle this.
-                        // But let's add a fallback:
-                        if (moveX !== 0 && Math.abs(dy) > 1) {
-                            // Try Y instead
-                            const altY = this.y + Math.sign(dy) * this.speed * dt;
-                            if (!this.checkCollision(this.x, altY, obstacles, gaps)) {
-                                this.y = altY;
-                            } else {
-                                this.state = 'STOPPED';
-                                this.stateTimer = 0;
-                            }
-                        } else if (moveY !== 0 && Math.abs(dx) > 1) {
-                            // Try X instead
-                            const altX = this.x + Math.sign(dx) * this.speed * dt;
-                            if (!this.checkCollision(altX, this.y, obstacles, gaps)) {
-                                this.x = altX;
-                            } else {
-                                this.state = 'STOPPED';
-                                this.stateTimer = 0;
-                            }
+                            this.expression = '!'; // Idea!
                         } else {
-                            this.state = 'STOPPED';
+                            // If no solution found, keep thinking or retry walking random?
+                            // Loop back to Trying to Push or just stay Thinking
+                            if (this.stateTimer > 2.0) {
+                                this.state = 'STOPPED'; // Loop back
+                                this.stateTimer = 0;
+                            }
+                        }
+                        break;
+
+                    case 'HESITATE':
+                        // 5. Hesitate '!'
+                        this.stateTimer += dt;
+                        this.expression = '!';
+                        if (this.stateTimer > 0.8) {
+                            this.state = 'ASSESS';
                             this.stateTimer = 0;
                         }
-                    }
-                } else {
-                    if (this.currentGoalX === this.goalX && this.currentGoalY === this.goalY) {
-                        this.state = 'REACHED_GOAL';
-                    }
+                        break;
+
+                    case 'ASSESS':
+                        // 6. Assess '...'
+                        this.stateTimer += dt;
+                        this.expression = '...';
+                        if (this.stateTimer > 1.0) {
+                            this.state = 'WALKING';
+                            this.expression = '';
+                        }
+                        break;
+
+                    case 'REACHED_GOAL':
+                        this.expression = '♥';
+                        break;
                 }
-            }
 
-            updateWalkingDetour(dt, obstacles) {
-                if (!this.detourPath) return;
-                const waypoint = this.detourPath.waypoint;
+                // Always try to plan path if walking
+                if (this.state === 'WALKING') {
+                    this.planPath(obstacles, blockages);
+                }
 
-                if (!this.reachedWaypoint) {
-                    const toX = waypoint.x - this.x;
-                    const toY = waypoint.y - this.y;
-                    const dist = Math.sqrt(toX * toX + toY * toY);
-
-                    if (dist > 15) {
-                        this.x += (toX / dist) * this.speed * dt;
-                        this.y += (toY / dist) * this.speed * dt;
-                    } else {
+                // Detour Completion Logic
+                if (this.detourPath) {
+                    // Check if reached waypoint (currentGoal/goal)
+                    // If pathQueue is empty and we are close to goal
+                    if (this.pathQueue.length === 0 && Math.abs(this.x - this.goalX) < 10 && Math.abs(this.y - this.goalY) < 10) {
                         this.reachedWaypoint = true;
-                    }
-                } else {
-                    const toX = this.goalX - this.x;
-                    const toY = this.goalY - this.y;
-                    const dist = Math.sqrt(toX * toX + toY * toY);
 
-                    if (dist > 5) {
-                        this.x += (toX / dist) * this.speed * dt;
-                        this.y += (toY / dist) * this.speed * dt;
-                    } else {
-                        this.state = 'REACHED_GOAL';
+                        // Fix: Back to Final Goal
+                        this.goalX = this.finalGoalX;
+                        this.goalY = this.finalGoalY;
+                        this.currentGoalX = this.finalGoalX;
+                        this.currentGoalY = this.finalGoalY;
+
+                        this.pathQueue = []; // Force recalc path to final goal
+                        this.detourPath = null;
+                        this.state = 'WALKING'; // Ensure we keep walking
+                        this.hasDetoured = true; // Mark as done so we don't go back
                     }
                 }
             }
 
-            checkCollision(x, y, obstacles, gaps = []) {
-                const margin = 2; // Provide a tiny bit of wiggle room
-                for (let obs of obstacles) {
-                    if (x + margin < obs.x + obs.width &&
-                        x + this.width - margin > obs.x &&
-                        y + margin < obs.y + obs.height &&
-                        y + this.height - margin > obs.y) {
+            checkEnvironment(blockages, gaps) {
+                // Logic to update goal based on environment
+
+                // Level 1: Check if blocking block is cleared
+                if (currentLevel === 1) {
+                    // Check if we are trying to go to main goal but blocked?
+                    // Just check if any blockage revealing path is now CLEARED
+                    const detourBlock = blockages.find(b => b.revealsPath && !b.blocked);
+
+                    if (detourBlock && !this.hasDetoured) {
+                        // Detour is open!
+                        // Check if we are already using it?
+                        if (this.goalX !== detourBlock.revealsPath.waypoint.x) {
+                            // New goal!
+                            this.goalX = detourBlock.revealsPath.waypoint.x;
+                            this.goalY = detourBlock.revealsPath.waypoint.y;
+                            this.currentGoalX = this.goalX;
+                            this.currentGoalY = this.goalY;
+                            this.pathQueue = []; // Force recalc
+                            this.detourPath = true;
+                            return true;
+                        }
+                    }
+                }
+
+                // Level 2: Check for filled gaps
+                if (currentLevel === 2) {
+                    // If gap filled, maybe we can cross?
+                    const filledGap = gaps.find(g => g.isFilled);
+                    if (filledGap) {
+                        // Simply returning true to trigger HESITATE -> WALKING
+                        // planPath needs to be smart enough to walk over it now.
+                        // checkCollision already handles isFilled.
                         return true;
                     }
                 }
+
+                return false;
+            }
+            planPath(obstacles, blockages) {
+                // Determine high-level Goal (Final destination or Detour)
+                // If we have a detour and haven't reached it, target detour.
+                let finalTargetX = this.goalX;
+                let finalTargetY = this.goalY;
+
+                // Check if direct path is blocked by a Blockage entity
+                // If so, look for detour
+                // This is specific "AI" logic for the level
+                if (currentLevel === 1) {
+                    const mainBlockage = obstacles.find(o => o.y === this.y || Math.abs(o.y - this.y) < 10);
+                    // Actually, let's keep it simple:
+                    // If we are at the detour start (Logic handled in updateWalking to trigger detour)
+                }
+
+                // If queue is empty, we need to generate a path to finalTarget
+                if (this.pathQueue.length === 0 && (Math.abs(this.x - finalTargetX) > 5 || Math.abs(this.y - finalTargetY) > 5)) {
+                    // Generate L-shaped path
+                    this.generatePath(finalTargetX, finalTargetY, obstacles);
+                }
+            }
+
+            generatePath(tx, ty, obstacles) {
+                // Simple L-shape generator:
+                // Option A: X then Y
+                // Option B: Y then X
+                // Check which one is valid (no obstacles)
+
+                let pathA = [
+                    { x: tx, y: this.y }, // Intermediate (move X, same Y)
+                    { x: tx, y: ty }      // Final
+                ];
+
+                let pathB = [
+                    { x: this.x, y: ty }, // Intermediate (move Y, same X)
+                    { x: tx, y: ty }      // Final
+                ];
+
+                // Validate Path A (Check segment from Current to Inter, and Inter to Final)
+                // Simplification: Check intermediate point collision? No, need line check.
+                // For grid-like game, checking the corners/intermediate box is usually enough.
+
+                /* 
+                   We want to find a path that doesn't collide.
+                   Let's prioritize: Go X if |dx| > |dy| (unless blocked).
+                 */
+
+                const dx = tx - this.x;
+                const dy = ty - this.y;
+
+                // If already aligned on one axis, just push final
+                if (Math.abs(dx) < 5 || Math.abs(dy) < 5) {
+                    this.pathQueue = [{ x: tx, y: ty }];
+                    return;
+                }
+
+                // Default: Try X then Y
+                let firstPoint = { x: tx, y: this.y };
+                // Check if `firstPoint` is safe (and the path to it)
+                if (!this.checkCollision(firstPoint.x, firstPoint.y, obstacles, [])) {
+                    this.pathQueue = [firstPoint, { x: tx, y: ty }];
+                } else {
+                    // Try Y then X
+                    this.pathQueue = [{ x: this.x, y: ty }, { x: tx, y: ty }];
+                }
+            }
+
+            updateWalking(dt, obstacles, gaps) {
+                // Consume Queue
+
+                if (this.pathQueue.length === 0) return;
+
+                const target = this.pathQueue[0];
+                this.currentGoalX = target.x;
+                this.currentGoalY = target.y;
+
+                const dx = this.currentGoalX - this.x;
+                const dy = this.currentGoalY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 5) {
+                    // Reached waypoint
+                    this.x = this.currentGoalX;
+                    this.y = this.currentGoalY;
+                    this.pathQueue.shift(); // Remove reached waypoint
+                    return;
+                }
+
+                // Move towards current waypoint (Strictly on axis usually, but since we decomposed to L-shape, 
+                // one of dx/dy should be ~0. If floating point mess, we force it.)
+
+                let moveX = 0;
+                let moveY = 0;
+
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    moveX = Math.sign(dx) * this.speed * dt;
+                } else {
+                    moveY = Math.sign(dy) * this.speed * dt;
+                }
+
+                const nextX = this.x + moveX;
+                const nextY = this.y + moveY;
+
+                if (!this.checkCollision(nextX, nextY, obstacles, gaps)) {
+                    this.x = nextX;
+                    this.y = nextY;
+                } else {
+                    // Bonk
+                    this.state = 'STOPPED';
+                    this.stateTimer = 0;
+                    // Clear queue to recalc options?
+                    this.pathQueue = [];
+                }
+            }
+
+            checkCollision(x, y, obstacles, gaps) {
+                // ... existing collision logic ...
+                // Need to use temporary rect
+                // Girl is GIRL_SIZE (40)
+                for (let obs of obstacles) {
+                    if (x < obs.x + obs.width &&
+                        x + this.width > obs.x &&
+                        y < obs.y + obs.height &&
+                        y + this.height > obs.y) {
+                        return true;
+                    }
+                }
+
+                // Gaps logic (only if not filled)
                 for (let gap of gaps) {
-                    if (!gap.isFilled) {
-                        if (x + margin < gap.x + gap.width &&
-                            x + this.width - margin > gap.x &&
-                            y + margin < gap.y + gap.height &&
-                            y + this.height - margin > gap.y) {
-                            return true;
+                    if (!gap.isFilled &&
+                        x < gap.x + gap.width &&
+                        x + this.width > gap.x &&
+                        y < gap.y + gap.height &&
+                        y + this.height > gap.y) {
+
+                        // Check strict overlap (center point?)
+                        // If center of girl is inside gap
+                        const cx = x + this.width / 2;
+                        const cy = y + this.height / 2;
+                        if (cx > gap.x && cx < gap.x + gap.width &&
+                            cy > gap.y && cy < gap.y + gap.height) {
+                            return true; // Fall in gap
                         }
                     }
                 }
@@ -485,13 +618,12 @@
                 const eyeY = this.y + this.height / 3 + this.bobOffset;
 
                 // Normal Eyes
-                let leftEyeX = this.x + 10 + this.eyeOffset;
-                let rightEyeX = this.x + this.width - 14 + this.eyeOffset;
+                let leftEyeX = this.x + 10 + this.eyeOffset.x;
+                let rightEyeX = this.x + this.width - 14 + this.eyeOffset.x;
                 let eyeH = 8;
 
-                if (this.state === 'STOPPED' || this.state === 'HESITATE') {
-                    // Looking up/thinking
-                    eyeH = 4;
+                if (this.blinkTimer > 0) {
+                    eyeH = 2; // Blinking
                 }
 
                 // Draw Eyes
@@ -514,19 +646,11 @@
                 }
 
                 // Status Indicator (Bubble)
-                if (['STOPPED', 'TRY_PUSH', 'OBSERVE', 'HESITATE', 'REACHED_GOAL'].includes(this.state)) {
+                if (this.expression) {
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold 16px sans-serif';
                     ctx.textAlign = 'center';
-                    let text = '';
-
-                    if (this.state === 'STOPPED') text = '!';
-                    else if (this.state === 'TRY_PUSH') text = '>';
-                    else if (this.state === 'OBSERVE') text = '?';
-                    else if (this.state === 'HESITATE') text = '...';
-                    else if (this.state === 'REACHED_GOAL') text = '♥';
-
-                    ctx.fillText(text, this.x + this.width / 2, this.y - 12 + this.bobOffset);
+                    ctx.fillText(this.expression, this.x + this.width / 2, this.y - 12 + this.bobOffset);
                 }
             }
         }
@@ -604,7 +728,7 @@
             }
         }
 
-        // Movable Object (Plank/Block)
+        // Movable Object (Plank/Block) - Redesign: Sleek Slider
         class Movable {
             constructor(x, y, width, height, type = 'plank') {
                 this.x = x;
@@ -614,8 +738,8 @@
                 this.type = type;
                 this.vx = 0;
                 this.vy = 0;
-                this.friction = 0.90; // Increased friction for easier control
-                this.mass = 2; // Increased mass
+                this.friction = 0.90;
+                this.mass = 2;
             }
 
             applyForce(fx, fy) {
@@ -632,7 +756,7 @@
                 if (Math.abs(this.vx) < 1) this.vx = 0;
                 if (Math.abs(this.vy) < 1) this.vy = 0;
 
-                // Limits (accounting for grid offset roughly, but clamping to canvas is safer)
+                // Limits
                 if (this.x < 0) { this.x = 0; this.vx = 0; }
                 if (this.x + this.width > GAME_WIDTH) { this.x = GAME_WIDTH - this.width; this.vx = 0; }
                 if (this.y < 0) { this.y = 0; this.vy = 0; }
@@ -641,24 +765,38 @@
 
             draw(ctx) {
                 if (this.type === 'plank') {
+                    // Sleek Industrial Design
+
                     // Shadow
                     ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                    roundRect(ctx, this.x + 3, this.y + 3, this.width, this.height, 2);
+                    roundRect(ctx, this.x + 4, this.y + 4, this.width, this.height, 4);
                     ctx.fill();
 
-                    // Body
-                    ctx.fillStyle = '#a6825d'; // Darker, richer wood
-                    roundRect(ctx, this.x, this.y, this.width, this.height, 2);
+                    // Main Body: Dark Grey
+                    ctx.fillStyle = '#333';
+                    roundRect(ctx, this.x, this.y, this.width, this.height, 4);
                     ctx.fill();
 
-                    // Simple geometric detail (Inset)
-                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                    ctx.fillRect(this.x + 10, this.y + 10, this.width - 20, this.height - 20);
+                    // Accent: Neon Cyan Edge
+                    const lineWidth = 4;
+                    ctx.fillStyle = '#0ff'; // Neon
+
+                    // Draw accent strip on left
+                    ctx.fillRect(this.x + 10, this.y + 10, 5, this.height - 20);
+
+                    // Draw accent strip on right
+                    ctx.fillRect(this.x + this.width - 15, this.y + 10, 5, this.height - 20);
+
+                    // Center detail (Grip lines)
+                    ctx.fillStyle = '#444';
+                    ctx.fillRect(this.x + this.width / 2 - 15, this.y + 20, 30, 4);
+                    ctx.fillRect(this.x + this.width / 2 - 15, this.y + 30, 30, 4);
+                    ctx.fillRect(this.x + this.width / 2 - 15, this.y + 40, 30, 4);
                 }
             }
         }
 
-        // Blockage (Hides secret path) - Redesigned as Sand/Debris Pile
+        // Blockage - Redesign: Geometric Cluster (Shatter Effect)
         class Blockage {
             constructor(x, y, width, height, revealsPath = null) {
                 this.x = x;
@@ -668,50 +806,67 @@
                 this.blocked = true;
                 this.revealsPath = revealsPath;
                 this.opacity = 1.0;
+
+                // Parts for shattered visual
+                this.parts = [];
+                const cols = 3;
+                const rows = 3;
+                const partW = width / cols;
+                const partH = height / rows;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        this.parts.push({
+                            ox: c * partW, // Offset X
+                            oy: r * partH, // Offset Y
+                            w: partW - 2,  // Gap
+                            h: partH - 2,
+                            vx: 0,
+                            vy: 0,
+                            active: true
+                        });
+                    }
+                }
             }
 
             draw(ctx) {
                 if (this.blocked) {
-                    // Draw as a pile of sand/debris
-                    // Using a semi-circle/mound shape
-                    ctx.fillStyle = '#C2B280'; // Sand color
+                    // Draw clustered parts
+                    ctx.fillStyle = '#C2B280'; // Sand/Stone color
+                    // Or maybe a bit more geometric "glitch" color
+                    ctx.fillStyle = '#aaa';
 
-                    ctx.beginPath();
-                    // Draw a mound shape
-                    ctx.moveTo(this.x, this.y + this.height);
-                    // Curvy top
-                    ctx.bezierCurveTo(
-                        this.x + this.width * 0.2, this.y + this.height * 0.4,
-                        this.x + this.width * 0.8, this.y + this.height * 0.4,
-                        this.x + this.width, this.y + this.height
-                    );
-                    ctx.closePath();
-                    ctx.fill();
+                    for (let p of this.parts) {
+                        ctx.fillStyle = '#555';
+                        ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, p.h);
 
-                    // Add texture/noise
-                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                    for (let i = 0; i < 10; i++) {
-                        const px = this.x + Math.random() * this.width;
-                        const py = this.y + this.height / 2 + Math.random() * this.height / 2;
-                        if (py > this.y + this.height) continue;
-                        ctx.beginPath();
-                        ctx.arc(px, py, 2 + Math.random() * 3, 0, Math.PI * 2);
-                        ctx.fill();
+                        // Highlight
+                        ctx.fillStyle = '#777';
+                        ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, 4);
                     }
+
                 } else {
+                    // Shatter animation
+                    if (this.opacity > 0) {
+                        this.opacity -= 0.02;
+
+                        for (let p of this.parts) {
+                            if (!p.vx) {
+                                // Explode outwards
+                                p.vx = (Math.random() - 0.5) * 10;
+                                p.vy = (Math.random() - 0.5) * 10;
+                            }
+                            p.ox += p.vx;
+                            p.oy += p.vy;
+
+                            ctx.fillStyle = `rgba(150, 150, 150, ${this.opacity})`;
+                            ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, p.h);
+                        }
+                    }
+
                     // Reveal path visual
                     if (this.revealsPath) {
-                        // Draw guide line
                         const wp = this.revealsPath.waypoint;
-                        ctx.strokeStyle = THEME.exit;
-                        ctx.lineWidth = 2;
-                        ctx.setLineDash([5, 5]);
-                        ctx.beginPath();
-                        ctx.moveTo(this.x + this.width / 2, this.y + this.height / 2);
-                        ctx.lineTo(wp.x, wp.y);
-                        // ctx.stroke(); 
-                        ctx.setLineDash([]);
-
                         // Draw Waypoint marker
                         ctx.fillStyle = THEME.exit;
                         ctx.globalAlpha = 0.3;
@@ -910,6 +1065,11 @@
             girl = new Girl(safeStart.x + (CELL_SIZE - GIRL_SIZE) / 2, safeStart.y + (CELL_SIZE - GIRL_SIZE) / 2);
             girl.goalX = getGridPos(3, 1).x + (CELL_SIZE - GIRL_SIZE) / 2;
             girl.goalY = getGridPos(3, 1).y + (CELL_SIZE - GIRL_SIZE) / 2;
+
+            // Fix: Set Final Goal explicitly here
+            girl.finalGoalX = girl.goalX;
+            girl.finalGoalY = girl.goalY;
+
             girl.currentGoalX = girl.goalX;
             girl.currentGoalY = girl.goalY;
 
@@ -946,6 +1106,8 @@
             girl = new Girl(startPos.x + (CELL_SIZE - GIRL_SIZE) / 2, startPos.y + (CELL_SIZE - GIRL_SIZE) / 2);
             girl.goalX = getGridPos(3, 1).x + (CELL_SIZE - GIRL_SIZE) / 2;
             girl.goalY = getGridPos(3, 1).y + (CELL_SIZE - GIRL_SIZE) / 2;
+            girl.finalGoalX = girl.goalX;
+            girl.finalGoalY = girl.goalY;
             girl.currentGoalX = girl.goalX;
             girl.currentGoalY = girl.goalY;
 
@@ -1052,13 +1214,14 @@
 
             // 3. Draw Entities
 
-            // Exit Marker (New)
+            // Exit Marker (New) - Use FINAL GOAL
             if (girl) {
                 // Determine exit position (goal)
                 // Draw a glowing floor plate
                 ctx.save();
-                const exitX = girl.goalX + GIRL_SIZE / 2;
-                const exitY = girl.goalY + GIRL_SIZE / 2;
+                // Use finalGoalX/Y instead of goalX/Y which changes
+                const exitX = girl.finalGoalX + GIRL_SIZE / 2;
+                const exitY = girl.finalGoalY + GIRL_SIZE / 2;
                 const exitRadius = 30 + Math.sin(now / 500) * 5;
 
                 ctx.beginPath();
