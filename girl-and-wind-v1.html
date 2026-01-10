@@ -1066,6 +1066,10 @@
                 }
             }
 
+            update(dt) {
+                // Base class does nothing, RegeneratingBlockage overrides this
+            }
+
             draw(ctx) {
                 if (this.blocked) {
                     // Draw clustered parts
@@ -1288,7 +1292,7 @@
         class RegeneratingBlockage extends Blockage {
             constructor(x, y, width, height, revealsPath = null) {
                 super(x, y, width, height, revealsPath);
-                this.regenTime = 5.0; // Seconds to regenerate
+                this.regenTime = 3.0; // Seconds to regenerate
                 this.regenTimer = 0;
                 this.isRegenerating = false;
             }
@@ -1345,6 +1349,67 @@
                     ctx.fillStyle = 'rgba(255, 68, 68, 0.1)';
                     ctx.fillRect(this.x, this.y + this.height * (1 - progress), this.width, this.height * progress);
                     ctx.restore();
+                }
+            }
+        }
+
+        // Door - Controlled by WindSwitch, slides open instead of shattering
+        class Door {
+            constructor(x, y, width, height, id = null) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.id = id;
+                this.blocked = true;
+                this.openProgress = 0; // 0 = closed, 1 = fully open
+                this.opening = false;
+            }
+
+            update(dt) {
+                if (this.opening && this.openProgress < 1) {
+                    this.openProgress += dt * 2; // Open over 0.5 seconds
+                    if (this.openProgress >= 1) {
+                        this.openProgress = 1;
+                        this.blocked = false;
+                    }
+                }
+            }
+
+            open() {
+                this.opening = true;
+            }
+
+            draw(ctx) {
+                // Door frame (always visible)
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(this.x + 2, this.y + 2, this.width - 4, this.height - 4);
+
+                const openOffset = this.openProgress * this.height * 0.9;
+
+                // Door panels (slide up when opening)
+                ctx.fillStyle = '#7b5544'; // Wood color
+                ctx.fillRect(this.x + 4, this.y + 4 - openOffset, this.width - 8, this.height - 8);
+
+                // Door lines (panels)
+                ctx.strokeStyle = '#5c3d2e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 2, this.y + 4 - openOffset);
+                ctx.lineTo(this.x + this.width / 2, this.y + this.height - 4 - openOffset);
+                ctx.stroke();
+
+                // Horizontal bar
+                ctx.beginPath();
+                ctx.moveTo(this.x + 4, this.y + this.height / 2 - openOffset);
+                ctx.lineTo(this.x + this.width - 4, this.y + this.height / 2 - openOffset);
+                ctx.stroke();
+
+                // Handle glow when opening
+                if (this.opening && this.openProgress < 1) {
+                    ctx.fillStyle = `rgba(0, 255, 200, ${0.5 - this.openProgress * 0.5})`;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
                 }
             }
         }
@@ -1649,6 +1714,7 @@
         let movables = [];
         let switches = [];
         let collectibles = [];
+        let doors = [];
         let wind = new Wind();
 
         // Helper to get grid position
@@ -1742,6 +1808,15 @@
                 });
             }
 
+            // Setup doors
+            doors = [];
+            if (levelData.doors) {
+                levelData.doors.forEach(d => {
+                    const pos = getGridPos(d.col, d.row);
+                    doors.push(new Door(pos.x, pos.y, CELL_SIZE, CELL_SIZE, d.id));
+                });
+            }
+
             // Setup Girl
             const startPos = getGridPos(levelData.gridStart.col, levelData.gridStart.row);
             const goalPos = getGridPos(levelData.gridExit.col, levelData.gridExit.row);
@@ -1760,7 +1835,7 @@
                 // 0: Empty, 1: Obstacle, 2: Block(Static), 3: Block(Regen)
                 // 4: Gap, 5: Plank, 6: Switch
                 this.selectedType = 1;
-                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit"];
+                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit", "Col", "Door"];
             }
 
             toggle() {
@@ -1827,6 +1902,8 @@
                         if (val === 4) { ctx.fillStyle = '#000'; ctx.fillRect(x + 10, y + 10, CELL_SIZE - 20, CELL_SIZE - 20); } // Gap
                         if (val === 5) { ctx.fillStyle = '#44f'; ctx.fillRect(x + 15, y + 50, CELL_SIZE - 30, 20); } // Plank
                         if (val === 6) { ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 10, 0, Math.PI * 2); ctx.fill(); } // Switch
+                        if (val === 9) { ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 8, 0, Math.PI * 2); ctx.fill(); } // Collectible
+                        if (val === 10) { ctx.fillStyle = '#7b5544'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); } // Door
                     }
                 }
                 ctx.restore();
@@ -1837,7 +1914,7 @@
                 ctx.textAlign = 'left';
                 ctx.fillText(`EDITOR MODE [E] to Close`, 20, 30);
                 ctx.fillText(`Selected: [${this.selectedType}] ${this.typeNames[this.selectedType]}`, 20, 50);
-                ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Stat, 3-Regen, 4-Gap, 5-Plank, 6-Switch, 7-Start, 8-Exit`, 20, 70);
+                ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Sta, 3-Reg, 4-Gap, 5-Plnk, 6-Sw, 7-Start, 8-Exit, 9-Col, D-Door`, 20, 70);
                 ctx.fillText(`[P] Print Config`, 20, 90);
             }
 
@@ -1850,12 +1927,13 @@
                     obstacles: [],
                     blockages: [],
                     gaps: [],
-                    movables: [],
-                    switches: []
+                    collectibles: [],
+                    doors: []
                 };
 
                 let switchCount = 0;
                 let blockCount = 0;
+                let doorCount = 0;
 
                 for (let r = 0; r < GRID_H; r++) {
                     for (let c = 0; c < GRID_W; c++) {
@@ -1870,6 +1948,11 @@
                         if (val === 5) config.movables.push({ col: c, row: r, type: 'plank' });
                         if (val === 6) {
                             config.switches.push({ col: c, row: r, targetId: 1 }); // Default link to ID 1
+                        }
+                        if (val === 9) config.collectibles.push({ col: c, row: r });
+                        if (val === 10) {
+                            doorCount++;
+                            config.doors.push({ col: c, row: r, id: doorCount });
                         }
                     }
                 }
@@ -1903,7 +1986,8 @@
             }
             if (editor.active) {
                 if (key === 'p') editor.exportConfig();
-                if (key >= '0' && key <= '8') editor.selectedType = parseInt(key);
+                if (key >= '0' && key <= '9') editor.selectedType = parseInt(key);
+                if (key === 'd') editor.selectedType = 10;
                 return;
             }
 
@@ -1985,18 +2069,22 @@
 
             // Updates
             for (let obj of movables) obj.update(dt);
+            for (let blk of blockages) blk.update(dt); // 重要：更新 regen blockages
+            for (let door of doors) door.update(dt); // 更新门
             for (let s of switches) {
                 s.update(dt);
-                // Link logic
+                // Link logic - now controls doors instead of blockages
                 if (s.active && s.targetId) {
-                    const target = blockages.find(b => b.id === s.targetId);
-                    if (target) target.blocked = false; // Open!
+                    const door = doors.find(d => d.id === s.targetId);
+                    if (door && !door.opening) door.open();
                 }
             }
             for (let gap of gaps) gap.checkFilled(movables);
             // 只把未锁定的木板当成障碍物（锁定的木板已变成桥）
+            // 把未打开的门也当成障碍物
             const unlockedMovables = movables.filter(m => !m.isLocked);
-            if (girl) girl.update(dt, obstacles.concat(unlockedMovables), blockages, gaps, switches);
+            const blockedDoors = doors.filter(d => d.blocked);
+            if (girl) girl.update(dt, obstacles.concat(unlockedMovables).concat(blockedDoors), blockages, gaps, switches);
 
             // Update collectibles
             for (let col of collectibles) col.update(dt, girl);
@@ -2074,6 +2162,7 @@
             for (let gap of gaps) gap.draw(ctx);
             for (let obs of obstacles) obs.draw(ctx);
             for (let blk of blockages) blk.draw(ctx);
+            for (let door of doors) door.draw(ctx); // Draw doors
             for (let mov of movables) mov.draw(ctx);
             for (let sw of switches) sw.draw(ctx);
             for (let col of collectibles) col.draw(ctx);
