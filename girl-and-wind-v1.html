@@ -227,6 +227,143 @@
 
         const particles = new ParticleSystem();
 
+        // ===============================
+        // GRID-BASED BFS PATHFINDING
+        // ===============================
+
+        // 将像素坐标转换为网格坐标
+        function pixelToGrid(x, y) {
+            const col = Math.floor((x - GRID_OFFSET_X) / CELL_SIZE);
+            const row = Math.floor((y - GRID_OFFSET_Y) / CELL_SIZE);
+            return {
+                col: Math.max(0, Math.min(GRID_W - 1, col)),
+                row: Math.max(0, Math.min(GRID_H - 1, row))
+            };
+        }
+
+        // 将网格坐标转换为像素坐标（格子中心，调整为女孩位置）
+        function gridToPixel(col, row) {
+            return {
+                x: GRID_OFFSET_X + col * CELL_SIZE + (CELL_SIZE - GIRL_SIZE) / 2,
+                y: GRID_OFFSET_Y + row * CELL_SIZE + (CELL_SIZE - GIRL_SIZE) / 2
+            };
+        }
+
+        // 检查某个格子是否可通行
+        function isGridCellWalkable(col, row, obstacles, blockages, gaps, ignoreEntities = []) {
+            if (col < 0 || col >= GRID_W || row < 0 || row >= GRID_H) return false;
+
+            const cellX = GRID_OFFSET_X + col * CELL_SIZE;
+            const cellY = GRID_OFFSET_Y + row * CELL_SIZE;
+
+            // 检查障碍物
+            for (let obs of obstacles) {
+                if (ignoreEntities.includes(obs)) continue;
+                if (cellX < obs.x + obs.width &&
+                    cellX + CELL_SIZE > obs.x &&
+                    cellY < obs.y + obs.height &&
+                    cellY + CELL_SIZE > obs.y) {
+                    return false;
+                }
+            }
+
+            // 检查 blockages（只有 blocked 状态才阻挡）
+            for (let b of blockages) {
+                if (ignoreEntities.includes(b)) continue;
+                if (b.blocked) {
+                    if (cellX < b.x + b.width &&
+                        cellX + CELL_SIZE > b.x &&
+                        cellY < b.y + b.height &&
+                        cellY + CELL_SIZE > b.y) {
+                        return false;
+                    }
+                }
+            }
+
+            // 检查 gaps（只有未填充的 gap 才阻挡）
+            for (let g of gaps) {
+                if (!g.isFilled) {
+                    if (cellX < g.x + g.width &&
+                        cellX + CELL_SIZE > g.x &&
+                        cellY < g.y + g.height &&
+                        cellY + CELL_SIZE > g.y) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // BFS 找最短路径，返回像素坐标数组（waypoints）
+        // 如果终点不可达，返回到最接近终点的可达格子的路径
+        function findGridPath(startX, startY, endX, endY, obstacles, blockages, gaps, ignoreEntities = []) {
+            const start = pixelToGrid(startX, startY);
+            const end = pixelToGrid(endX, endY);
+
+            // 如果起点终点相同，直接返回
+            if (start.col === end.col && start.row === end.row) {
+                return [];
+            }
+
+            // 起点到终点的距离
+            const startDist = Math.abs(start.col - end.col) + Math.abs(start.row - end.row);
+
+            // BFS 队列
+            const queue = [{ col: start.col, row: start.row, path: [] }];
+            const visited = new Set();
+            visited.add(`${start.col},${start.row}`);
+
+            // 记录真正朝终点方向的最远位置
+            let bestPath = [];
+            let bestDist = startDist;
+
+            // 四个方向
+            const directions = [
+                { dc: 0, dr: -1 }, { dc: 0, dr: 1 },
+                { dc: -1, dr: 0 }, { dc: 1, dr: 0 }
+            ];
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                for (let dir of directions) {
+                    const newCol = current.col + dir.dc;
+                    const newRow = current.row + dir.dr;
+                    const key = `${newCol},${newRow}`;
+
+                    if (visited.has(key)) continue;
+                    if (!isGridCellWalkable(newCol, newRow, obstacles, blockages, gaps, ignoreEntities)) continue;
+
+                    visited.add(key);
+
+                    const newPath = [...current.path, { col: newCol, row: newRow }];
+
+                    // 找到终点！
+                    if (newCol === end.col && newRow === end.row) {
+                        return newPath.map(p => gridToPixel(p.col, p.row));
+                    }
+
+                    // 检查是否比当前最佳位置更接近终点
+                    const dist = Math.abs(newCol - end.col) + Math.abs(newRow - end.row);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestPath = newPath;
+                    }
+
+                    queue.push({ col: newCol, row: newRow, path: newPath });
+                }
+            }
+
+            // 没找到完整路径，但如果有更接近终点的位置就返回那个路径
+            if (bestPath.length > 0 && bestDist < startDist) {
+                return bestPath.map(p => gridToPixel(p.col, p.row));
+            }
+
+            // 无法更接近终点了
+            return [];
+        }
+
         // Girl with "Thomas Was Alone" Aesthetics
         class Girl {
             constructor(x, y, goalPos) {
@@ -263,8 +400,9 @@
                 this.stateTimer = 0;
 
                 this.detourPath = null;
-                this.hasDetoured = false; // Flag to prevent re-taking the same detour
+                this.hasDetoured = false;
                 this.reachedWaypoint = false;
+                this.stuckAtClosest = false; // 标记是否已到达最近位置
 
                 // Animation
                 this.bobOffset = 0;
@@ -335,28 +473,21 @@
 
             update(dt, obstacles, blockages, gaps, switches) {
                 // Update animation state
-                this.bobOffset = Math.sin(Date.now() / 150) * 2;
+                // 不晃动，走直线
+                // this.bobOffset = Math.sin(Date.now() / 150) * 2;
                 if (Math.random() < 0.01) this.blinkTimer = 10;
                 if (this.blinkTimer > 0) this.blinkTimer--;
 
                 // Logic State Machine
                 switch (this.state) {
                     case 'WALKING':
-                        this.updateWalking(dt, obstacles, blockages, gaps, switches);
-
-                        // Spawn trail particles
-                        if (Math.random() < 0.1) {
-                            particles.spawn(this.x + this.width / 2, this.y + this.height, 'dust');
-                        }
-
                         // Check collision with Blockages specifically to trigger "BLOCKED" state
-                        // Note: updateWalking handles physics stop. This is for Logic State change.
-                        for (let b of blockages) {
-                            if (b.blocked && this.checkCollision(this.x, this.y, [b], [])) {
-                                this.state = 'BLOCKED';
-                                this.stateTimer = 0;
-                                this.expression = '!';
-                            }
+                        // Note: updateWalking handles physics stop.
+                        // If updateWalking returns true, it means we hit something.
+                        if (this.updateWalking(dt, obstacles, blockages, gaps, switches)) {
+                            this.state = 'BLOCKED';
+                            this.stateTimer = 0;
+                            this.expression = '!';
                         }
                         break;
 
@@ -389,9 +520,8 @@
                         this.expression = '>';
                         this.stateTimer += dt;
 
-                        // Small "pushing" animation
-                        this.x += (Math.random() - 0.5) * 1;
-                        this.y += (Math.random() - 0.5) * 1;
+                        // 不移动位置，只做视觉效果（bobOffset 已禁用）
+                        // 避免把自己推进障碍物里
 
                         if (this.stateTimer > 0.8) {
                             this.state = 'THINKING';
@@ -403,13 +533,12 @@
                         this.stateTimer += dt;
                         this.expression = '...';
 
-                        // Check environment for new paths
-                        if (this.checkEnvironment(obstacles, blockages, gaps, switches)) {
-                            // New plan/goal found!
-                            this.state = 'HESITATE';
-                            this.stateTimer = 0;
-                            this.expression = '!';
-                        }
+                        // 每次思考后都重新检查环境并尝试走
+                        this.checkEnvironment(obstacles, blockages, gaps, switches);
+                        // 总是进入 HESITATE 状态，然后重新尝试走
+                        this.state = 'HESITATE';
+                        this.stateTimer = 0;
+                        this.expression = '!';
                         break;
 
                     case 'HESITATE':
@@ -443,163 +572,133 @@
             }
 
             checkEnvironment(obstacles, blockages, gaps, switches) {
-                // PRIORITY 0: Detour Completion (Check this FIRST so we don't get stuck at a waypoint)
-                if (this.detourPath) {
-                    // Check if close to detour goal
-                    if (Math.abs(this.x - this.currentGoalX) < 10 && Math.abs(this.y - this.currentGoalY) < 10) {
-                        // Reached detour!
-                        this.hasDetoured = true;
-                        this.detourPath = false;
-
-                        // Immediately assume Final Goal is next
-                        this.currentGoalX = this.finalGoalX;
-                        this.goalX = this.finalGoalX;
-                        this.goalY = this.finalGoalY;
-                        this.pathQueue = [];
-                        return true; // Environment Changed (Goal Updated)
-                    }
-                }
+                // 简化版：直接检查是否能到达终点，BFS 会自动找路
 
                 // PRIORITY 1: Can I reach the FINAL GOAL?
-                // Regardless of what I'm doing, if the Exit is clear, GO THERE.
                 if (this.canReachGoal(this.finalGoalX, this.finalGoalY, obstacles, blockages, gaps)) {
+                    // 终点可达！重置卡住标记
+                    this.stuckAtClosest = false;
                     if (this.currentGoalX !== this.finalGoalX || this.currentGoalY !== this.finalGoalY) {
-                        // CHANGE PLANS IMMEDIATELY
                         this.currentGoalX = this.finalGoalX;
                         this.currentGoalY = this.finalGoalY;
                         this.goalX = this.finalGoalX;
                         this.goalY = this.finalGoalY;
                         this.pathQueue = [];
-                        this.detourPath = false;
-                        this.hasDetoured = true;
-                        return true; // Environment/Plan Changed!
+                        return true;
                     }
                     return true;
                 }
 
-                // PRIORITY 2: SWITCHES
+                // PRIORITY 2: SWITCHES - 如果有 switch 且终点不可达，去找 switch
                 if (switches && switches.length > 0) {
-                    const isTargetingSwitch = switches.some(s => s.x === this.currentGoalX && s.y === this.currentGoalY);
-                    // If blocked from Final Goal AND not currently going to a switch...
-                    if (!isTargetingSwitch && !this.canReachGoal(this.finalGoalX, this.finalGoalY, obstacles, blockages, gaps)) {
-                        const keySwitch = switches.find(s => !s.active);
-                        if (keySwitch) {
-                            if (this.canReachGoal(keySwitch.x, keySwitch.y, obstacles, blockages, gaps)) {
-                                if (this.currentGoalX !== keySwitch.x || this.currentGoalY !== keySwitch.y) {
-                                    this.currentGoalX = keySwitch.x;
-                                    this.currentGoalY = keySwitch.y;
-                                    this.goalX = this.currentGoalX;
-                                    this.goalY = this.currentGoalY;
-                                    this.pathQueue = [];
-                                    this.detourPath = true;
-                                    return true;
-                                }
-                                return true;
-                            }
-                        }
-                    }
-                }
-
-                // PRIORITY 3: DETOURS
-                for (let b of blockages) {
-                    if (b.revealsPath && !b.blocked && !this.hasDetoured) {
-                        if (this.canReachGoal(b.revealsPath.waypoint.x, b.revealsPath.waypoint.y, obstacles, blockages, gaps)) {
-                            if (this.currentGoalX !== b.revealsPath.waypoint.x) {
-                                this.currentGoalX = b.revealsPath.waypoint.x;
-                                this.currentGoalY = b.revealsPath.waypoint.y;
-                                this.goalX = this.currentGoalX;
-                                this.goalY = this.currentGoalY;
-                                this.pathQueue = [];
-                                this.detourPath = true;
-                                return true;
-                            }
+                    const keySwitch = switches.find(s => !s.active);
+                    if (keySwitch && this.canReachGoal(keySwitch.x, keySwitch.y, obstacles, blockages, gaps)) {
+                        this.stuckAtClosest = false; // 重置标记
+                        if (this.currentGoalX !== keySwitch.x || this.currentGoalY !== keySwitch.y) {
+                            this.currentGoalX = keySwitch.x;
+                            this.currentGoalY = keySwitch.y;
+                            this.goalX = this.currentGoalX;
+                            this.goalY = this.currentGoalY;
+                            this.pathQueue = [];
                             return true;
                         }
+                        return true;
                     }
                 }
 
-                // PRIORITY 4: Current Goal Validity
-                if (this.canReachGoal(this.currentGoalX, this.currentGoalY, obstacles, blockages, gaps)) {
-                    return true;
-                }
+                // 每次思考后都重置卡住标记，这样女孩可以重新尝试走
+                // 如果还是被卡住，planPath 会重新设置这个标记
+                this.stuckAtClosest = false;
 
-                return false;
+                // 即使终点不可达，也让女孩继续往终点方向走
+                this.currentGoalX = this.finalGoalX;
+                this.currentGoalY = this.finalGoalY;
+                this.goalX = this.finalGoalX;
+                this.goalY = this.finalGoalY;
+                return true;
             }
 
-            // Placeholder for canReachGoal method, as it's used in checkEnvironment
-            canReachGoal(targetX, targetY, obstacles, blockages, gaps) {
-                // This is a simplified check. A real implementation would involve pathfinding.
-                // For now, assume we can reach if there's no immediate collision on a direct path.
-                // This method would ideally check if a path exists using generatePath or a more robust A* algorithm.
-                // For the purpose of this edit, we'll just check if a direct L-shaped path is possible.
+            // 使用 BFS 检查是否可达
+            canReachGoal(targetX, targetY, obstacles, blockages, gaps, ignoreEntities = []) {
+                const start = pixelToGrid(this.x, this.y);
+                const end = pixelToGrid(targetX, targetY);
 
-                // Try Option A: X then Y
-                let midA = { x: targetX, y: this.y };
-                let validA = !this.checkCollisionLine(this.x, this.y, midA.x, midA.y, obstacles, blockages, gaps) &&
-                    !this.checkCollisionLine(midA.x, midA.y, targetX, targetY, obstacles, blockages, gaps);
-                if (validA) return true;
+                // 如果起点终点相同，可达
+                if (start.col === end.col && start.row === end.row) return true;
 
-                // Try Option B: Y then X
-                let midB = { x: this.x, y: targetY };
-                let validB = !this.checkCollisionLine(this.x, this.y, midB.x, midB.y, obstacles, blockages, gaps) &&
-                    !this.checkCollisionLine(midB.x, midB.y, targetX, targetY, obstacles, blockages, gaps);
-                if (validB) return true;
+                // 使用 BFS 检查是否有路径
+                const queue = [{ col: start.col, row: start.row }];
+                const visited = new Set();
+                visited.add(`${start.col},${start.row}`);
 
-                // If neither L-path works, assume not reachable directly for this simple check
+                const directions = [
+                    { dc: 0, dr: -1 }, { dc: 0, dr: 1 },
+                    { dc: -1, dr: 0 }, { dc: 1, dr: 0 }
+                ];
+
+                while (queue.length > 0) {
+                    const current = queue.shift();
+
+                    for (let dir of directions) {
+                        const newCol = current.col + dir.dc;
+                        const newRow = current.row + dir.dr;
+                        const key = `${newCol},${newRow}`;
+
+                        if (visited.has(key)) continue;
+                        if (!isGridCellWalkable(newCol, newRow, obstacles, blockages, gaps, ignoreEntities)) continue;
+
+                        if (newCol === end.col && newRow === end.row) return true;
+
+                        visited.add(key);
+                        queue.push({ col: newCol, row: newRow });
+                    }
+                }
                 return false;
             }
 
             planPath(obstacles, blockages, gaps) {
-                // If queue has items, we are good (consuming them)
+                // If queue has items, continue consuming
                 if (this.pathQueue.length > 0) return;
 
-                // If close to goal, we are good
-                if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) return;
+                // If close to goal, done
+                if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) {
+                    this.state = 'REACHED_GOAL';
+                    return;
+                }
 
-                // Force generation even if blocked (so we can walk into the wall and trigger events)
-                // "Go to Goal!"
-                this.generatePath(this.goalX, this.goalY, obstacles, blockages, gaps);
+                // 尝试生成完整路径
+                const path = findGridPath(this.x, this.y, this.goalX, this.goalY, obstacles, blockages, gaps);
+
+                if (path.length > 0) {
+                    this.pathQueue = path;
+                } else {
+                    // 没有完整路径，触发 BLOCKED
+                    if (this.state === 'WALKING') {
+                        this.state = 'BLOCKED';
+                        this.stateTimer = 0;
+                        this.expression = '!';
+                    }
+                }
             }
 
             generatePath(tx, ty, obstacles, blockages, gaps) {
-                // Option A: X then Y
-                let midA = { x: tx, y: this.y };
-
-                // Use strict collision line check
-                let validA = !this.checkCollisionLine(this.x, this.y, midA.x, midA.y, obstacles, blockages, gaps) &&
-                    !this.checkCollisionLine(midA.x, midA.y, tx, ty, obstacles, blockages, gaps);
-
-                if (validA) {
-                    this.pathQueue = [midA, { x: tx, y: ty }];
-                    return;
-                }
-
-                // Option B: Y then X
-                let midB = { x: this.x, y: ty };
-                let validB = !this.checkCollisionLine(this.x, this.y, midB.x, midB.y, obstacles, blockages, gaps) &&
-                    !this.checkCollisionLine(midB.x, midB.y, tx, ty, obstacles, blockages, gaps);
-
-                if (validB) {
-                    this.pathQueue = [midB, { x: tx, y: ty }];
-                    return;
-                }
-
-                // If both invalid? Try direct?
-                this.pathQueue = [{ x: tx, y: ty }];
+                // 使用 BFS 自动找最短路径
+                this.pathQueue = findGridPath(this.x, this.y, tx, ty, obstacles, blockages, gaps);
             }
 
-            checkCollisionLine(x1, y1, x2, y2, obstacles, blockages, gaps) {
+            checkCollisionLine(x1, y1, x2, y2, obstacles, blockages, gaps, ignoreEntities = []) {
                 // Check if any point along line collides?
-                // Simplest: Check the bounding box of the movement
                 let minX = Math.min(x1, x2);
                 let maxX = Math.max(x1, x2) + this.width;
                 let minY = Math.min(y1, y2);
                 let maxY = Math.max(y1, y2) + this.height;
 
                 for (let o of obstacles) {
+                    if (ignoreEntities.includes(o)) continue;
                     if (maxX > o.x && minX < o.x + o.width && maxY > o.y && minY < o.y + o.height) return true;
                 }
                 for (let b of blockages) {
+                    if (ignoreEntities.includes(b)) continue;
                     if (b.blocked) {
                         if (maxX > b.x && minX < b.x + b.width && maxY > b.y && minY < b.y + b.height) return true;
                     }
@@ -622,33 +721,41 @@
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist < 5) {
-                    // Reached waypoint
+                    // Reached waypoint - 精确对齐到格子中心
                     this.pathQueue.shift();
-                    // Snap to exact pos
                     this.x = target.x;
                     this.y = target.y;
 
-                    // If finished path, check if we need to switch goals?
+                    // 路径走完了，让状态机在下一帧处理
+                    // 不要在这里直接生成新路径，避免来回晃
                     if (this.pathQueue.length === 0) {
                         this.checkEnvironment(obstacles, blockages, gaps, switches);
+                        // 不调用 generatePath，让 planPath 在下一帧处理
                     }
                     return;
                 }
 
-                // Move towards target
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    this.x += Math.sign(dx) * this.speed * dt;
-                } else {
-                    this.y += Math.sign(dy) * this.speed * dt;
+                // 移动 - 每次只走一个方向，确保走直线
+                let moveX = 0, moveY = 0;
+                if (Math.abs(dx) > 2) {
+                    moveX = Math.sign(dx) * this.speed * dt;
+                } else if (Math.abs(dy) > 2) {
+                    moveY = Math.sign(dy) * this.speed * dt;
                 }
 
+                const newX = this.x + moveX;
+                const newY = this.y + moveY;
+
                 // Collision Check
-                if (this.checkCollision(this.x, this.y, obstacles, gaps, blockages)) {
-                    // Revert
-                    this.x -= Math.sign(dx) * this.speed * dt;
-                    this.y -= Math.sign(dy) * this.speed * dt;
-                    this.state = 'STOPPED'; // Collided
+                if (this.checkCollision(newX, newY, obstacles, gaps, blockages)) {
+                    // 碰撞了，停止并触发状态机
+                    this.state = 'STOPPED';
+                    return true;
                 }
+
+                this.x = newX;
+                this.y = newY;
+                return false;
             }
 
             checkCollision(x, y, obstacles, gaps, blockages) {
