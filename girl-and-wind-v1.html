@@ -859,12 +859,22 @@
 
                         if (coverageRatio > 0.5) {
                             this.isFilled = true;
+                            // 锁定木板在 Gap 位置，变成桥
+                            if (!obj.isLocked) {
+                                obj.isLocked = true;
+                                obj.x = this.x;
+                                obj.y = this.y;
+                                obj.vx = 0;
+                                obj.vy = 0;
+                            }
+                            this.filledBy = obj; // 记录是哪个木板填的
                             return;
                         }
                     }
                 }
                 this.isFilled = false;
                 this.coverageRatio = 0;
+                this.filledBy = null;
             }
 
             draw(ctx) {
@@ -1366,7 +1376,6 @@
                 gridExit: { col: 3, row: 1 },
                 obstacles: [],
                 blockages: [
-                    // Blockage with ID 1
                     { col: 2, row: 1, type: 'static', id: 1 }
                 ],
                 gaps: [],
@@ -1374,6 +1383,165 @@
                 switches: [
                     { col: 2, row: 2, targetId: 1 }
                 ]
+            },
+
+            // Level 5: Simple Gap
+            {
+                id: 5,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [
+                    { col: 3, row: 0 },
+                    { col: 1, row: 2 },
+                    { col: 0, row: 3 }
+                ],
+                blockages: [],
+                gaps: [
+                    { col: 2, row: 1 }
+                ],
+                movables: [],
+                switches: []
+            },
+
+            // Level 6: Gap + Plank + Blockage
+            {
+                id: 6,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [
+                    { col: 1, row: 1 }
+                ],
+                blockages: [
+                    { col: 1, row: 2, type: 'static', id: 1 }
+                ],
+                gaps: [
+                    { col: 2, row: 1 },
+                    { col: 3, row: 2 }
+                ],
+                movables: [
+                    { col: 1, row: 0, type: 'plank' },
+                    { col: 1, row: 3, type: 'plank' }
+                ],
+                switches: []
+            },
+
+            // Level 7: Multiple Gaps + Blockages
+            {
+                id: 7,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [
+                    { col: 2, row: 1 }
+                ],
+                blockages: [
+                    { col: 3, row: 0, type: 'static', id: 1 },
+                    { col: 2, row: 3, type: 'static', id: 2 }
+                ],
+                gaps: [
+                    { col: 1, row: 1 },
+                    { col: 2, row: 2 }
+                ],
+                movables: [],
+                switches: []
+            },
+
+            // Level 8: Regenerating Blockages
+            {
+                id: 8,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [
+                    { col: 0, row: 0, type: 'regen' },
+                    { col: 1, row: 1, type: 'regen' },
+                    { col: 2, row: 1, type: 'regen' },
+                    { col: 3, row: 2, type: 'regen' },
+                    { col: 3, row: 3, type: 'regen' }
+                ],
+                gaps: [],
+                movables: [],
+                switches: []
+            },
+
+            // Level 9: Regen + Gaps Maze
+            {
+                id: 9,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [
+                    { col: 2, row: 0, type: 'static', id: 1 },
+                    { col: 3, row: 0, type: 'regen' },
+                    { col: 2, row: 1, type: 'regen' },
+                    { col: 2, row: 2, type: 'regen' },
+                    { col: 3, row: 2, type: 'regen' },
+                    { col: 2, row: 3, type: 'regen' },
+                    { col: 3, row: 3, type: 'regen' }
+                ],
+                gaps: [
+                    { col: 1, row: 1 },
+                    { col: 1, row: 2 },
+                    { col: 1, row: 3 }
+                ],
+                movables: [],
+                switches: []
+            },
+
+            // Level 10: Many Gaps + Plank
+            {
+                id: 10,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [],
+                gaps: [
+                    { col: 2, row: 0 },
+                    { col: 1, row: 1 },
+                    { col: 2, row: 1 },
+                    { col: 2, row: 2 },
+                    { col: 3, row: 3 }
+                ],
+                movables: [
+                    { col: 0, row: 3, type: 'plank' }
+                ],
+                switches: []
+            },
+
+            // Level 11: Obstacle + Gaps + Plank
+            {
+                id: 11,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [
+                    { col: 1, row: 1 }
+                ],
+                blockages: [],
+                gaps: [
+                    { col: 1, row: 2 },
+                    { col: 1, row: 3 }
+                ],
+                movables: [
+                    { col: 0, row: 0, type: 'plank' }
+                ],
+                switches: []
+            },
+
+            // Level 12: Diagonal Gaps
+            {
+                id: 12,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [],
+                gaps: [
+                    { col: 1, row: 0 },
+                    { col: 2, row: 1 },
+                    { col: 3, row: 2 }
+                ],
+                movables: [
+                    { col: 3, row: 3, type: 'plank' }
+                ],
+                switches: []
             }
         ];
 
@@ -1639,6 +1807,17 @@
                 if (LEVELS.find(l => l.id === id)) loadLevel(id);
                 return;
             }
+            // N = Next level, P = Previous level
+            if (key === 'n') {
+                const nextLevel = currentLevel + 1;
+                if (LEVELS.find(l => l.id === nextLevel)) loadLevel(nextLevel);
+                return;
+            }
+            if (key === 'p' && !editor.active) {
+                const prevLevel = currentLevel - 1;
+                if (LEVELS.find(l => l.id === prevLevel)) loadLevel(prevLevel);
+                return;
+            }
 
             // Wind Controls (WASD)
             if (['w', 'a', 's', 'd'].includes(key)) {
@@ -1710,7 +1889,9 @@
                 }
             }
             for (let gap of gaps) gap.checkFilled(movables);
-            if (girl) girl.update(dt, obstacles.concat(movables), blockages, gaps, switches);
+            // 只把未锁定的木板当成障碍物（锁定的木板已变成桥）
+            const unlockedMovables = movables.filter(m => !m.isLocked);
+            if (girl) girl.update(dt, obstacles.concat(unlockedMovables), blockages, gaps, switches);
 
             if (wind.active) {
                 wind.pushMovables(movables);
