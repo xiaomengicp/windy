@@ -832,6 +832,80 @@
             }
         }
 
+        // Collectible - Optional item to collect (star/gem)
+        class Collectible {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.collected = false;
+                this.spin = 0;
+                this.bobOffset = 0;
+            }
+
+            update(dt, girl) {
+                if (this.collected) return;
+
+                this.spin += dt * 3;
+                this.bobOffset = Math.sin(Date.now() / 200) * 3;
+
+                // Check if girl touches it
+                if (girl) {
+                    const girlCenterX = girl.x + girl.width / 2;
+                    const girlCenterY = girl.y + girl.height / 2;
+                    const myCenterX = this.x + this.width / 2;
+                    const myCenterY = this.y + this.height / 2;
+
+                    const dist = Math.sqrt(
+                        Math.pow(girlCenterX - myCenterX, 2) +
+                        Math.pow(girlCenterY - myCenterY, 2)
+                    );
+
+                    if (dist < 35) {
+                        this.collected = true;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (this.collected) return;
+
+                const centerX = this.x + this.width / 2;
+                const centerY = this.y + this.height / 2 + this.bobOffset;
+
+                // Glow effect
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffcc00';
+
+                // Star shape
+                ctx.fillStyle = '#ffcc00';
+                ctx.translate(centerX, centerY);
+                ctx.rotate(this.spin);
+
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+                    const r = i === 0 ? 12 : 12;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Inner highlight
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
         // Gap (Hole)
         class Gap {
             constructor(x, y, width, height) {
@@ -1228,7 +1302,28 @@
                         this.blocked = true;
                         this.health = 100;
                         this.regenTimer = 0;
-                        this.shatterParticles = []; // Reset particles
+
+                        // 重置视觉状态
+                        this.opacity = 1.0;
+                        // 重置 parts 位置
+                        const cols = 3;
+                        const rows = 3;
+                        const partW = this.width / cols;
+                        const partH = this.height / rows;
+                        this.parts = [];
+                        for (let r = 0; r < rows; r++) {
+                            for (let c = 0; c < cols; c++) {
+                                this.parts.push({
+                                    ox: c * partW,
+                                    oy: r * partH,
+                                    w: partW - 2,
+                                    h: partH - 2,
+                                    vx: 0,
+                                    vy: 0,
+                                    active: true
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -1552,7 +1647,8 @@
         let blockages = [];
         let gaps = [];
         let movables = [];
-        let switches = []; // New
+        let switches = [];
+        let collectibles = [];
         let wind = new Wind();
 
         // Helper to get grid position
@@ -1634,6 +1730,15 @@
                 levelData.switches.forEach(sw => {
                     const pos = getGridPos(sw.col, sw.row);
                     switches.push(new WindSwitch(pos.x, pos.y, CELL_SIZE, CELL_SIZE, sw.targetId));
+                });
+            }
+
+            // Setup collectibles
+            collectibles = [];
+            if (levelData.collectibles) {
+                levelData.collectibles.forEach(col => {
+                    const pos = getGridPos(col.col, col.row);
+                    collectibles.push(new Collectible(pos.x, pos.y, CELL_SIZE, CELL_SIZE));
                 });
             }
 
@@ -1893,6 +1998,9 @@
             const unlockedMovables = movables.filter(m => !m.isLocked);
             if (girl) girl.update(dt, obstacles.concat(unlockedMovables), blockages, gaps, switches);
 
+            // Update collectibles
+            for (let col of collectibles) col.update(dt, girl);
+
             if (wind.active) {
                 wind.pushMovables(movables);
                 wind.checkBlockages(blockages);
@@ -1967,7 +2075,8 @@
             for (let obs of obstacles) obs.draw(ctx);
             for (let blk of blockages) blk.draw(ctx);
             for (let mov of movables) mov.draw(ctx);
-            for (let sw of switches) sw.draw(ctx); // Draw switches
+            for (let sw of switches) sw.draw(ctx);
+            for (let col of collectibles) col.draw(ctx);
 
             if (girl) girl.draw(ctx);
             wind.draw(ctx);
