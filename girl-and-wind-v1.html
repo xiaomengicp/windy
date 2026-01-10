@@ -409,39 +409,109 @@
             }
 
             checkEnvironment(blockages, gaps) {
-                // Logic to update goal based on environment
+                // Generic Check: Can I reach my current goal?
+                // Or better: Can I reach my FINAL goal?
 
-                // Level 1: Check if blocking block is cleared
-                if (currentLevel === 1) {
-                    // Check if we are trying to go to main goal but blocked?
-                    // Just check if any blockage revealing path is now CLEARED
-                    const detourBlock = blockages.find(b => b.revealsPath && !b.blocked);
+                // If I am detour-ing, I am already happy. 
+                // But if I am BLOCKED/THINKING, I am waiting for something to change.
 
-                    if (detourBlock && !this.hasDetoured) {
-                        // Detour is open!
-                        // Check if we are already using it?
-                        if (this.goalX !== detourBlock.revealsPath.waypoint.x) {
-                            // New goal!
-                            this.goalX = detourBlock.revealsPath.waypoint.x;
-                            this.goalY = detourBlock.revealsPath.waypoint.y;
-                            this.currentGoalX = this.goalX;
-                            this.currentGoalY = this.goalY;
-                            this.pathQueue = []; // Force recalc
-                            this.detourPath = true;
-                            return true;
-                        }
+                // 1. Check if direct path to Current Goal is possible?
+                if (this.canReachGoal(this.currentGoalX, this.currentGoalY, obstacles, blockages, gaps)) {
+                    // But wait, if direct path was blocked by DETOUR wall, we need to know.
+                    return true;
+                }
+
+                // 2. If impossible, check if DETOUR is now an option?
+                // (Only for Level 2 logic, but let's make it generic)
+                // If any blockage revealing a path is now unblocked?
+                const detourBlock = blockages.find(b => b.revealsPath && !b.blocked);
+                if (detourBlock && !this.hasDetoured) {
+                    if (this.goalX !== detourBlock.revealsPath.waypoint.x) {
+                        // Switch goal to detour!
+                        this.goalX = detourBlock.revealsPath.waypoint.x;
+                        this.goalY = detourBlock.revealsPath.waypoint.y;
+                        this.currentGoalX = this.goalX;
+                        this.currentGoalY = this.goalY;
+                        this.pathQueue = [];
+                        this.detourPath = true;
+                        return true;
                     }
                 }
 
-                // Level 2: Check for filled gaps
-                if (currentLevel === 2) {
-                    // If gap filled, maybe we can cross?
-                    const filledGap = gaps.find(g => g.isFilled);
-                    if (filledGap) {
-                        // Simply returning true to trigger HESITATE -> WALKING
-                        // planPath needs to be smart enough to walk over it now.
-                        // checkCollision already handles isFilled.
+                return false;
+            }
+
+            canReachGoal(tx, ty, obstacles, blockages, gaps) {
+                // Simple check: Can I make an L-shaped path without collision?
+                // This effectively dry-runs 'generatePath'.
+
+                // Treat active blockages as obstacles
+                const activeObstacles = [...obstacles];
+                for (let b of blockages) {
+                    if (b.blocked) {
+                        activeObstacles.push({ x: b.x, y: b.y, width: b.width, height: b.height });
+                    }
+                }
+
+                // Dry run generating path
+                // Option A: X then Y
+                let firstPointA = { x: tx, y: this.y };
+                // Check segment 1: Current -> FirstPointA
+                let safeA1 = !this.checkCollisionLine(this.x, this.y, firstPointA.x, firstPointA.y, activeObstacles, gaps);
+                // Check segment 2: FirstPointA -> Target
+                let safeA2 = !this.checkCollisionLine(firstPointA.x, firstPointA.y, tx, ty, activeObstacles, gaps);
+
+                if (safeA1 && safeA2) return true;
+
+                // Option B: Y then X
+                let firstPointB = { x: this.x, y: ty };
+                let safeB1 = !this.checkCollisionLine(this.x, this.y, firstPointB.x, firstPointB.y, activeObstacles, gaps);
+                let safeB2 = !this.checkCollisionLine(firstPointB.x, firstPointB.y, tx, ty, activeObstacles, gaps);
+
+                return safeB1 && safeB2;
+            }
+
+            checkCollisionLine(x1, y1, x2, y2, obstacles, gaps) {
+                // Simplified line check: Check start, end, and midpoint? 
+                // Since movements are axis aligned, we just check the rect formed by the line.
+                // Or better, use checkCollision on a few points?
+                // For this grid/AI, checking the End Point of the segment is often mostly sufficient if grid aligned.
+                // But let's be safer: Check the full "Swept" rect.
+
+                const minX = Math.min(x1, x2);
+                const maxX = Math.max(x1, x2);
+                const minY = Math.min(y1, y2);
+                const maxY = Math.max(y1, y2);
+                const width = (maxX - minX) + this.width; // Girl dim
+                const height = (maxY - minY) + this.height;
+
+                // Effective rect for collision
+                const rectX = minX; // technically should account for girl center/origin logic, but collision uses top-left
+                const rectY = minY;
+
+                // Just use existing checkCollision on the end point? 
+                // No, that misses walls in between.
+
+                // Let's iterate obstacles and checks intersection with the movement segment.
+                // Since AABB:
+                for (let obs of obstacles) {
+                    if (maxX + this.width > obs.x &&
+                        minX < obs.x + obs.width &&
+                        maxY + this.height > obs.y &&
+                        minY < obs.y + obs.height) {
                         return true;
+                    }
+                }
+
+                // Gaps logic (must be filled)
+                for (let gap of gaps) {
+                    if (!gap.isFilled) {
+                        if (maxX + this.width > gap.x &&
+                            minX < gap.x + gap.width &&
+                            maxY + this.height > gap.y &&
+                            minY < gap.y + gap.height) {
+                            return true;
+                        }
                     }
                 }
 
@@ -958,8 +1028,24 @@
 
                             // Interaction particles
                             if (Math.random() < 0.1) {
-                                particles.spawn(obj.x + obj.width / 2, obj.y + obj.height / 2, 'wind');
+                                particles.spawn(obj.x + Math.random() * obj.width, obj.y + Math.random() * obj.height, 'dust', 1);
                             }
+                        }
+                    }
+                }
+            }
+
+            checkSwitches(switches) {
+                if (!this.active) return;
+                for (let s of switches) {
+                    const dx = this.x - (s.x + s.width / 2);
+                    const dy = this.y - (s.y + s.height / 2);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < this.size + s.width / 2) {
+                        if (!s.active) {
+                            s.active = true;
+                            // Trigger logic handled in game loop or switch update
                         }
                     }
                 }
@@ -1031,13 +1117,184 @@
             }
         }
 
+        // Regenerating Blockage (Grows back)
+        class RegeneratingBlockage extends Blockage {
+            constructor(x, y, width, height, revealsPath = null) {
+                super(x, y, width, height, revealsPath);
+                this.regenTime = 5.0; // Seconds to regenerate
+                this.regenTimer = 0;
+                this.isRegenerating = false;
+            }
+
+            update(dt) {
+                super.update(dt);
+                if (!this.blocked) {
+                    this.regenTimer += dt;
+                    if (this.regenTimer > this.regenTime) {
+                        // Regenerate!
+                        this.blocked = true;
+                        this.health = 100;
+                        this.regenTimer = 0;
+                        this.shatterParticles = []; // Reset particles
+                    }
+                }
+            }
+
+            draw(ctx) {
+                super.draw(ctx);
+
+                // Draw regeneration indicator (if clearing)
+                if (!this.blocked) {
+                    const progress = this.regenTimer / this.regenTime;
+                    ctx.save();
+                    ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 200) * 0.2;
+                    ctx.strokeStyle = '#ff4444';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(this.x + 10, this.y + 10, this.width - 20, this.height - 20);
+
+                    // Progress bar or growing ghost
+                    ctx.fillStyle = 'rgba(255, 68, 68, 0.1)';
+                    ctx.fillRect(this.x, this.y + this.height * (1 - progress), this.width, this.height * progress);
+                    ctx.restore();
+                }
+            }
+        }
+
+        // Wind Switch (Trigger)
+        class WindSwitch {
+            constructor(x, y, width, height, targetId = null) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.active = false;
+                this.targetId = targetId; // ID of object this switch controls (e.g. a door)
+                this.spin = 0;
+            }
+
+            update(dt) {
+                if (this.active) {
+                    this.spin += dt * 10;
+                    if (this.spin > Math.PI * 2) this.spin -= Math.PI * 2;
+                }
+            }
+
+            draw(ctx) {
+                // Base
+                ctx.fillStyle = '#444';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                // Sensor / Fan
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+                if (this.active) {
+                    ctx.rotate(this.spin);
+                    ctx.fillStyle = '#0ff'; // Bright Cyan
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#0ff';
+                } else {
+                    ctx.fillStyle = '#555'; // Inactive
+                    // Slow idle spin
+                    ctx.rotate(Date.now() / 1000);
+                }
+
+                // Draw simple fan blades
+                ctx.fillRect(-15, -4, 30, 8);
+                ctx.fillRect(-4, -15, 8, 30);
+
+                // Center hub
+                ctx.fillStyle = this.active ? '#fff' : '#888';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+
+                // Border
+                ctx.strokeStyle = this.active ? '#fff' : '#888';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        // --- LEVEL SYSTEM ---
+        const LEVELS = [
+            // Level 1: Tutorial (Hidden Exit, Simple Regenerating Block)
+            {
+                id: 1,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [
+                    // Simple block hiding the exit
+                    { col: 2, row: 1, type: 'regen', revealsPath: null }
+                ],
+                movables: [],
+                gaps: []
+            },
+
+            // Level 2: The Detour (Old Level 1)
+            {
+                id: 2,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [
+                    { col: 2, row: 1 } // Blocks direct path
+                ],
+                blockages: [
+                    // Hides detour
+                    {
+                        col: 1, row: 2, type: 'static', revealsPath: {
+                            waypoint: { col: 2, row: 2 }
+                        }
+                    }
+                ],
+                movables: [],
+                gaps: []
+            },
+
+            // Level 3: Movable Plank (Old Level 2)
+            {
+                id: 3,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [],
+                gaps: [
+                    { col: 2, row: 1 }
+                ],
+                movables: [
+                    { col: 1, row: 2, type: 'plank' }
+                ]
+            },
+
+            // Level 4: The Switch
+            {
+                id: 4,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [],
+                blockages: [
+                    // Blockage with ID 1
+                    { col: 2, row: 1, type: 'static', id: 1 }
+                ],
+                gaps: [],
+                movables: [],
+                switches: [
+                    { col: 2, row: 2, targetId: 1 }
+                ]
+            }
+        ];
+
         // 游戏状态
-        let currentLevel = 1;
+        let currentLevelIndex = 0; // 0-based index for LEVELS array
         let girl = null;
         let obstacles = [];
         let blockages = [];
         let gaps = [];
         let movables = [];
+        let switches = []; // New
         let wind = new Wind();
 
         // Helper to get grid position
@@ -1048,132 +1305,151 @@
             };
         }
 
-        // 第一关的布局
-        function setupLevel1() {
+        // Helper to parse grid config
+        function parseGrid(config) {
+            if (!config) return null;
+            return getGridPos(config.col, config.row);
+        }
+
+        function loadLevel(levelId) {
+            const levelData = LEVELS.find(l => l.id === levelId);
+            if (!levelData) return;
+
+            currentLevel = levelId;
+            levelIndicator.innerText = "LEVEL " + levelId;
+
             obstacles = [];
             blockages = [];
             gaps = [];
             movables = [];
+            switches = [];
 
-            const startPos = getGridPos(0, 1.5);
-
-            // Fix: Align Start Position to Row 1 exactly to allow walking
-            // Girl works best when aligned to grid for simple path finding
-            // Center girl on (0, 1) to avoid clipping obstacle at (2, 1)
-            let safeStart = getGridPos(0, 1);
-
-            girl = new Girl(safeStart.x + (CELL_SIZE - GIRL_SIZE) / 2, safeStart.y + (CELL_SIZE - GIRL_SIZE) / 2);
-            girl.goalX = getGridPos(3, 1).x + (CELL_SIZE - GIRL_SIZE) / 2;
-            girl.goalY = getGridPos(3, 1).y + (CELL_SIZE - GIRL_SIZE) / 2;
-
-            // Fix: Set Final Goal explicitly here
-            girl.finalGoalX = girl.goalX;
-            girl.finalGoalY = girl.goalY;
-
-            girl.currentGoalX = girl.goalX;
-            girl.currentGoalY = girl.goalY;
-
-            // Obstacle at (2, 1)
-            const obsPos = getGridPos(2, 1);
-            obstacles.push(new Obstacle(obsPos.x, obsPos.y, CELL_SIZE, CELL_SIZE));
-
-            // The logic: Girl wants to go (0,1) -> (3,1), blocked by (2,1)
-            // She checks for detour.
-            // Blockage at (1, 2) hides detour.
-            const blockPos = getGridPos(1, 2);
-
-            // Waypoint for detour at (2, 2)
-            // Ensure path (1,2) -> (2,2) -> (3,2) -> (3,1) is viable
-            // The blockage is at (1,2), so when it opens, she can walk to (2,2).
-            const detourWaypoint = getGridPos(2, 2);
-            detourWaypoint.x += CELL_SIZE / 2; // Center
-            detourWaypoint.y += CELL_SIZE / 2;
-
-            blockages.push(new Blockage(
-                blockPos.x, blockPos.y, CELL_SIZE, CELL_SIZE,
-                { waypoint: detourWaypoint }
-            ));
-        }
-
-        // 第二关的布局
-        function setupLevel2() {
-            obstacles = [];
-            blockages = [];
-            gaps = [];
-            movables = [];
-
-            const startPos = getGridPos(0, 1);
-            girl = new Girl(startPos.x + (CELL_SIZE - GIRL_SIZE) / 2, startPos.y + (CELL_SIZE - GIRL_SIZE) / 2);
-            girl.goalX = getGridPos(3, 1).x + (CELL_SIZE - GIRL_SIZE) / 2;
-            girl.goalY = getGridPos(3, 1).y + (CELL_SIZE - GIRL_SIZE) / 2;
-            girl.finalGoalX = girl.goalX;
-            girl.finalGoalY = girl.goalY;
-            girl.currentGoalX = girl.goalX;
-            girl.currentGoalY = girl.goalY;
-
-            // Gap at (2, 1)
-            const gapPos = getGridPos(2, 1);
-            gaps.push(new Gap(gapPos.x, gapPos.y, CELL_SIZE, CELL_SIZE));
-
-            // Plank available at (1, 2)
-            // Fixed: Make plank larger to fit grid
-            const plankPos = getGridPos(1, 2);
-            movables.push(new Movable(plankPos.x, plankPos.y, CELL_SIZE, CELL_SIZE, 'plank'));
-        }
-
-        // 加载关卡
-        function loadLevel(level) {
-            currentLevel = level;
-            levelIndicator.innerText = `LEVEL ${level}`;
-            if (level === 1) setupLevel1();
-            else if (level === 2) setupLevel2();
-        }
-
-        // 初始化
-        loadLevel(1);
-
-        // 输入处理
-        let mouseX = GAME_WIDTH / 2;
-        let mouseY = 50;
-        let activeKeys = new Set();
-
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            // Scale mouse coordinates if canvas is styled different than logical size
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            mouseX = (e.clientX - rect.left) * scaleX;
-            mouseY = (e.clientY - rect.top) * scaleY;
-            wind.setPosition(mouseX, mouseY);
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (activeKeys.has(e.key.toLowerCase())) return;
-
-            if (['w', 'W', 'a', 'A', 's', 'S', 'd', 'D'].includes(e.key)) {
-                e.preventDefault();
-                activeKeys.add(e.key.toLowerCase());
-                wind.setDirection(e.key);
-                wind.activate();
-                wind.checkBlockages(blockages);
-            } else if (e.key === 'r' || e.key === 'R') {
-                loadLevel(currentLevel);
-            } else if (e.key === '1') {
-                loadLevel(1);
-            } else if (e.key === '2') {
-                loadLevel(2);
+            // Setup obstacles
+            if (levelData.obstacles) {
+                levelData.obstacles.forEach(obs => {
+                    const pos = getGridPos(obs.col, obs.row);
+                    obstacles.push(new Obstacle(pos.x, pos.y, CELL_SIZE, CELL_SIZE));
+                });
             }
-        });
 
-        document.addEventListener('keyup', (e) => {
-            if (['w', 'W', 'a', 'A', 's', 'S', 'd', 'D'].includes(e.key)) {
-                activeKeys.delete(e.key.toLowerCase());
-                if (!activeKeys.has('w') && !activeKeys.has('a') &&
-                    !activeKeys.has('s') && !activeKeys.has('d')) {
-                    wind.stop();
+            // Setup blockages
+            if (levelData.blockages) {
+                levelData.blockages.forEach(blk => {
+                    const pos = getGridPos(blk.col, blk.row);
+                    let reveals = null;
+                    if (blk.revealsPath) {
+                        // Calculate waypoint center
+                        const wp = getGridPos(blk.revealsPath.waypoint.col, blk.revealsPath.waypoint.row);
+                        reveals = { waypoint: { x: wp.x + CELL_SIZE / 2, y: wp.y + CELL_SIZE / 2 } };
+                    }
+
+                    if (blk.type === 'regen') {
+                        blockages.push(new RegeneratingBlockage(pos.x, pos.y, CELL_SIZE, CELL_SIZE, reveals));
+                    } else {
+                        const b = new Blockage(pos.x, pos.y, CELL_SIZE, CELL_SIZE, reveals);
+                        if (blk.id) b.id = blk.id; // Assign ID for switches
+                        blockages.push(b);
+                    }
+                });
+            }
+
+            // Setup gaps
+            if (levelData.gaps) {
+                levelData.gaps.forEach(gap => {
+                    const pos = getGridPos(gap.col, gap.row);
+                    gaps.push(new Gap(pos.x, pos.y, CELL_SIZE, CELL_SIZE));
+                });
+            }
+
+            // Setup movables
+            if (levelData.movables) {
+                levelData.movables.forEach(mov => {
+                    const pos = getGridPos(mov.col, mov.row);
+                    let w = CELL_SIZE;
+                    let h = CELL_SIZE;
+                    movables.push(new Movable(pos.x, pos.y, w, h, mov.type));
+                });
+            }
+
+            // Setup switches
+            if (levelData.switches) {
+                levelData.switches.forEach(sw => {
+                    const pos = getGridPos(sw.col, sw.row);
+                    switches.push(new WindSwitch(pos.x, pos.y, CELL_SIZE, CELL_SIZE, sw.targetId));
+                });
+            }
+
+            // Setup Girl
+            const startPos = getGridPos(levelData.gridStart.col, levelData.gridStart.row);
+            const goalPos = getGridPos(levelData.gridExit.col, levelData.gridExit.row);
+
+            girl = new Girl(startPos.x + (CELL_SIZE - GIRL_SIZE) / 2, startPos.y + (CELL_SIZE - GIRL_SIZE) / 2);
+            girl.goalX = goalPos.x + (CELL_SIZE - GIRL_SIZE) / 2;
+            girl.goalY = goalPos.y + (CELL_SIZE - GIRL_SIZE) / 2;
+            girl.finalGoalX = girl.goalX;
+            girl.finalGoalY = girl.goalY;
+            girl.currentGoalX = girl.goalX;
+            girl.currentGoalY = girl.goalY;
+        }
+
+        // Input Handling
+
+        // Track active wind keys
+        const activeKeys = new Set();
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+
+            // Level Controls
+            if (key === 'r') {
+                loadLevel(currentLevel);
+                return;
+            }
+            if (key >= '1' && key <= '9') {
+                const id = parseInt(key);
+                if (LEVELS.find(l => l.id === id)) loadLevel(id);
+                return;
+            }
+
+            // Wind Controls (WASD)
+            if (['w', 'a', 's', 'd'].includes(key)) {
+                if (!activeKeys.has(key)) {
+                    activeKeys.add(key);
+                    wind.setDirection(key);
+                    wind.activate();
+                    wind.checkBlockages(blockages);
                 }
             }
         });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+
+            if (['w', 'a', 's', 'd'].includes(key)) {
+                activeKeys.delete(key);
+                if (activeKeys.size === 0) {
+                    wind.stop();
+                } else {
+                    // Update direction to remaining key (optional, simplistic)
+                    const lastKey = Array.from(activeKeys).pop();
+                    wind.setDirection(lastKey);
+                }
+            }
+        });
+
+        // Mouse Move
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let mouseX = (e.clientX - rect.left) * scaleX;
+            let mouseY = (e.clientY - rect.top) * scaleY;
+            wind.setPosition(mouseX, mouseY);
+        });
+
+        // Initialize
+        loadLevel(1);
+        requestAnimationFrame(gameLoop);
 
         // 游戏循环
         let lastTime = Date.now();
@@ -1185,12 +1461,21 @@
 
             // Updates
             for (let obj of movables) obj.update(dt);
+            for (let s of switches) {
+                s.update(dt);
+                // Link logic
+                if (s.active && s.targetId) {
+                    const target = blockages.find(b => b.id === s.targetId);
+                    if (target) target.blocked = false; // Open!
+                }
+            }
             for (let gap of gaps) gap.checkFilled(movables);
             if (girl) girl.update(dt, obstacles, blockages, gaps);
 
             if (wind.active) {
                 wind.pushMovables(movables);
                 wind.checkBlockages(blockages);
+                wind.checkSwitches(switches);
             }
 
             particles.update(dt);
@@ -1206,8 +1491,7 @@
             for (let r = 0; r < GRID_H; r++) {
                 for (let c = 0; c < GRID_W; c++) {
                     ctx.fillStyle = THEME.grid;
-                    // Slightly smaller than cell to leave gaps
-                    ctx.fillRect(c * CELL_SIZE + 2, r * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                    ctx.fillRect(c * CELL_SIZE + 1, r * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
                 }
             }
             ctx.restore();
@@ -1224,37 +1508,43 @@
                 const exitY = girl.finalGoalY + GIRL_SIZE / 2;
                 const exitRadius = 30 + Math.sin(now / 500) * 5;
 
+                // Outer Glow
                 ctx.beginPath();
                 ctx.arc(exitX, exitY, exitRadius, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 170, 51, 0.2)'; // Warm Orange/Yellow
                 ctx.fill();
 
+                // Inner Core (Restored)
                 ctx.beginPath();
                 ctx.arc(exitX, exitY, exitRadius * 0.7, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 170, 51, 0.4)';
                 ctx.fill();
 
-                // Light beam
-                const grad = ctx.createLinearGradient(exitX, exitY, exitX, exitY - 100);
+                // Light Beam (Restored Gradient)
+                const grad = ctx.createLinearGradient(exitX, exitY, exitX, exitY - 150);
                 grad.addColorStop(0, 'rgba(255, 170, 51, 0.3)');
                 grad.addColorStop(1, 'rgba(255, 170, 51, 0)');
                 ctx.fillStyle = grad;
-                ctx.fillRect(exitX - 20, exitY - 100, 40, 100);
+                ctx.beginPath();
+                ctx.moveTo(exitX - 20, exitY);
+                ctx.lineTo(exitX + 20, exitY);
+                ctx.lineTo(exitX + 30, exitY - 150);
+                ctx.lineTo(exitX - 30, exitY - 150);
+                ctx.closePath();
+                ctx.fill();
 
                 ctx.restore();
             }
 
             for (let gap of gaps) gap.draw(ctx);
             for (let obs of obstacles) obs.draw(ctx);
-            for (let blockage of blockages) blockage.draw(ctx);
-            for (let obj of movables) obj.draw(ctx);
+            for (let blk of blockages) blk.draw(ctx);
+            for (let mov of movables) mov.draw(ctx);
+            for (let sw of switches) sw.draw(ctx); // Draw switches
+
             if (girl) girl.draw(ctx);
-
-            // 4. Draw Particles
-            particles.draw(ctx);
-
-            // 5. Draw Wind
             wind.draw(ctx);
+            particles.draw(ctx);
 
             // 6. Lighting / Vignette Overlay
             const gradient = ctx.createRadialGradient(
