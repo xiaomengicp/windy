@@ -1392,6 +1392,141 @@
             girl.currentGoalY = girl.goalY;
         }
 
+        // --- LEVEL EDITOR ---
+        class LevelEditor {
+            constructor() {
+                this.active = false;
+                this.grid = Array(GRID_H).fill(null).map(() => Array(GRID_W).fill(0));
+                this.startPos = { col: 0, row: 1 };
+                this.exitPos = { col: 3, row: 1 };
+
+                // 0: Empty, 1: Obstacle, 2: Block(Static), 3: Block(Regen)
+                // 4: Gap, 5: Plank, 6: Switch
+                this.selectedType = 1;
+                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit"];
+            }
+
+            toggle() {
+                this.active = !this.active;
+                if (this.active) {
+                    // Try to populate grid from current level? 
+                    // For simplicity, start clean or keep editor state.
+                    // (Advanced: Parse current objects back to grid)
+                }
+            }
+
+            handleClick(x, y) {
+                if (!this.active) return;
+
+                // Convert screen to grid
+                let col = Math.floor((x - GRID_OFFSET_X) / CELL_SIZE);
+                let row = Math.floor((y - GRID_OFFSET_Y) / CELL_SIZE);
+
+                if (col >= 0 && col < GRID_W && row >= 0 && row < GRID_H) {
+                    if (this.selectedType === 7) {
+                        this.startPos = { col, row };
+                    } else if (this.selectedType === 8) {
+                        this.exitPos = { col, row };
+                    } else {
+                        // Toggle or set?
+                        this.grid[row][col] = this.selectedType;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (!this.active) return;
+
+                // Dark overlay
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+                // Draw Grid
+                ctx.save();
+                ctx.translate(GRID_OFFSET_X, GRID_OFFSET_Y);
+
+                for (let r = 0; r < GRID_H; r++) {
+                    for (let c = 0; c < GRID_W; c++) {
+                        const val = this.grid[r][c];
+                        const x = c * CELL_SIZE;
+                        const y = r * CELL_SIZE;
+
+                        // Border
+                        ctx.strokeStyle = '#555';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+
+                        // Content
+                        if (r === this.startPos.row && c === this.startPos.col) {
+                            ctx.fillStyle = '#f0f'; ctx.fillText("START", x + 10, y + 40);
+                        }
+                        if (r === this.exitPos.row && c === this.exitPos.col) {
+                            ctx.fillStyle = '#ff0'; ctx.fillText("EXIT", x + 15, y + 40);
+                        }
+
+                        if (val === 1) { ctx.fillStyle = '#888'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); }
+                        if (val === 2) { ctx.fillStyle = '#f88'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); ctx.fillStyle = '#000'; ctx.fillText("BLK", x + 10, y + 20); }
+                        if (val === 3) { ctx.fillStyle = '#f44'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); ctx.fillStyle = '#000'; ctx.fillText("REG", x + 10, y + 20); }
+                        if (val === 4) { ctx.fillStyle = '#000'; ctx.fillRect(x + 10, y + 10, CELL_SIZE - 20, CELL_SIZE - 20); } // Gap
+                        if (val === 5) { ctx.fillStyle = '#44f'; ctx.fillRect(x + 15, y + 50, CELL_SIZE - 30, 20); } // Plank
+                        if (val === 6) { ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 10, 0, Math.PI * 2); ctx.fill(); } // Switch
+                    }
+                }
+                ctx.restore();
+
+                // HUD
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px Monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(`EDITOR MODE [E] to Close`, 20, 30);
+                ctx.fillText(`Selected: [${this.selectedType}] ${this.typeNames[this.selectedType]}`, 20, 50);
+                ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Stat, 3-Regen, 4-Gap, 5-Plank, 6-Switch, 7-Start, 8-Exit`, 20, 70);
+                ctx.fillText(`[P] Print Config`, 20, 90);
+            }
+
+            exportConfig() {
+                // Generate JSON
+                let config = {
+                    id: LEVELS.length + 1,
+                    gridStart: this.startPos,
+                    gridExit: this.exitPos,
+                    obstacles: [],
+                    blockages: [],
+                    gaps: [],
+                    movables: [],
+                    switches: []
+                };
+
+                let switchCount = 0;
+                let blockCount = 0;
+
+                for (let r = 0; r < GRID_H; r++) {
+                    for (let c = 0; c < GRID_W; c++) {
+                        const val = this.grid[r][c];
+                        if (val === 1) config.obstacles.push({ col: c, row: r });
+                        if (val === 2) {
+                            blockCount++;
+                            config.blockages.push({ col: c, row: r, type: 'static', id: blockCount });
+                        }
+                        if (val === 3) config.blockages.push({ col: c, row: r, type: 'regen' });
+                        if (val === 4) config.gaps.push({ col: c, row: r });
+                        if (val === 5) config.movables.push({ col: c, row: r, type: 'plank' });
+                        if (val === 6) {
+                            config.switches.push({ col: c, row: r, targetId: 1 }); // Default link to ID 1
+                        }
+                    }
+                }
+
+                const json = JSON.stringify(config, null, 2);
+                console.log(json);
+                window.alert("Config copied to clipboard (hypothetically) / Check Console!\n" + JSON.stringify(config));
+                // Try copy
+                try { navigator.clipboard.writeText(json); } catch (e) { }
+            }
+        }
+
+        const editor = new LevelEditor();
+
         // Input Handling
 
         // Track active wind keys
@@ -1405,6 +1540,16 @@
                 loadLevel(currentLevel);
                 return;
             }
+            if (key === 'e') {
+                editor.toggle();
+                return;
+            }
+            if (editor.active) {
+                if (key === 'p') editor.exportConfig();
+                if (key >= '0' && key <= '8') editor.selectedType = parseInt(key);
+                return;
+            }
+
             if (key >= '1' && key <= '9') {
                 const id = parseInt(key);
                 if (LEVELS.find(l => l.id === id)) loadLevel(id);
@@ -1437,7 +1582,7 @@
             }
         });
 
-        // Mouse Move
+        // Mouse Move & Click
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -1445,6 +1590,17 @@
             let mouseX = (e.clientX - rect.left) * scaleX;
             let mouseY = (e.clientY - rect.top) * scaleY;
             wind.setPosition(mouseX, mouseY);
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (editor.active) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                let mouseX = (e.clientX - rect.left) * scaleX;
+                let mouseY = (e.clientY - rect.top) * scaleY;
+                editor.handleClick(mouseX, mouseY);
+            }
         });
 
         // Initialize
@@ -1484,6 +1640,12 @@
             // 1. Background
             ctx.fillStyle = THEME.bg;
             ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            if (editor.active) {
+                editor.draw(ctx);
+                requestAnimationFrame(gameLoop);
+                return;
+            }
 
             // 2. Draw Grid (Subtle)
             ctx.save();
