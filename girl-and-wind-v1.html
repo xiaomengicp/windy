@@ -1702,6 +1702,23 @@
                     { col: 3, row: 3, type: 'plank' }
                 ],
                 switches: []
+            },
+            // Level 13: Door Introduction
+            {
+                id: 13,
+                gridStart: { col: 0, row: 1 },
+                gridExit: { col: 3, row: 1 },
+                obstacles: [{ col: 1, row: 1 }],
+                blockages: [
+                    { col: 2, row: 2, type: 'static', id: 1 },
+                    { col: 3, row: 2, type: 'static', id: 2 },
+                    { col: 2, row: 3, type: 'regen' }
+                ],
+                gaps: [],
+                movables: [],
+                switches: [{ col: 3, row: 3, targetId: 1 }],
+                collectibles: [{ col: 3, row: 0 }],
+                doors: [{ col: 2, row: 0, id: 1 }]
             }
         ];
 
