@@ -279,9 +279,10 @@
 
             <!-- START SCREEN -->
             <div id="start-screen" class="screen active">
-                <h1>Girl & Wind</h1>
+                <h1>Windy</h1>
                 <button class="btn" id="btn-start">Start Game</button>
                 <button class="btn" id="btn-levels">Levels</button>
+                <button class="btn" id="btn-credits-menu">Credits</button>
             </div>
 
             <!-- LEVEL GALLERY -->
@@ -349,6 +350,25 @@
                     <button class="btn" id="btn-credits">Credits</button>
                     <button class="btn btn-primary" id="btn-restart-end">Main Menu</button>
                 </div>
+            </div>
+
+            <!-- CREDITS SCREEN -->
+            <div id="credits-screen" class="screen">
+                <h1 style="font-size: 4rem; margin-bottom: 20px;">Windy</h1>
+                <div style="font-size: 1.2rem; opacity: 0.8; margin-bottom: 40px;">
+                    <p>Designed & Developed by</p>
+                    <p style="font-size: 1.5rem; color: #fff; margin: 10px 0;">Jo</p>
+                    <p style="opacity: 0.5;">2026</p>
+                </div>
+
+                <!-- Logo Placeholder -->
+                <div
+                    style="margin-bottom: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                    <span style="font-size: 12px; color: #aaa;">STUDIO LOGO</span>
+                    <!-- <img src="assets/logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;"> -->
+                </div>
+
+                <button class="btn" id="btn-back-credits">Back</button>
             </div>
 
             <!-- TRANSITION OVERLAY -->
@@ -537,6 +557,8 @@
                 this.windGain = null;
                 this.isInit = false;
                 this.windActive = false;
+                this.bgm = null;
+                this.ending = null;
             }
 
             init() {
@@ -565,6 +587,37 @@
                 // Resume if suspended (browser policy)
                 if (this.ctx.state === 'suspended') {
                     this.ctx.resume();
+                }
+
+                // Load Music
+                this.bgm = new Audio('assets/audio/bgm.mp3');
+                this.bgm.loop = true;
+                this.bgm.volume = 0.5;
+
+                this.ending = new Audio('assets/audio/ending.mp3');
+                this.ending.loop = false;
+                this.ending.volume = 0.6;
+
+                this.playBGM();
+            }
+
+            playBGM() {
+                if (this.bgm && this.bgm.paused) {
+                    this.bgm.play().catch(e => console.log("Audio play failed (interaction needed):", e));
+                }
+            }
+
+            stopBGM() {
+                if (this.bgm) {
+                    this.bgm.pause();
+                    this.bgm.currentTime = 0;
+                }
+            }
+
+            playEnding() {
+                this.stopBGM();
+                if (this.ending) {
+                    this.ending.play().catch(e => console.log("Ending play failed:", e));
                 }
             }
 
@@ -3013,7 +3066,9 @@
                     pause: document.getElementById('pause-screen'),
                     fail: document.getElementById('fail-screen'),
                     win: document.getElementById('win-screen'),
-                    end: document.getElementById('end-screen')
+                    win: document.getElementById('win-screen'),
+                    end: document.getElementById('end-screen'),
+                    credits: document.getElementById('credits-screen')
                 };
 
                 this.elements = {
@@ -3069,11 +3124,15 @@
 
                 // End Screen
                 document.getElementById('btn-credits').onclick = () => {
-                    alert("Design & Code by [Your Name] \nCreated in 2026");
+                    this.switchState('CREDITS');
                 };
                 document.getElementById('btn-restart-end').onclick = () => {
                     this.switchState('MENU');
                 };
+
+                // Credits Screen
+                document.getElementById('btn-credits-menu').onclick = () => this.switchState('CREDITS');
+                document.getElementById('btn-back-credits').onclick = () => this.switchState('MENU');
             }
 
             _initGallery() {
@@ -3178,6 +3237,7 @@
 
                 if (newState === 'MENU') {
                     this.screens.start.classList.add('active');
+                    if (audioSystem) audioSystem.playBGM();
                 } else if (newState === 'LEVEL_SELECT') {
                     this.screens.gallery.classList.add('active');
                 } else if (newState === 'PLAYING') {
@@ -3190,6 +3250,9 @@
                     this.screens.win.classList.add('active');
                 } else if (newState === 'END') {
                     this.screens.end.classList.add('active');
+                    if (audioSystem) audioSystem.playEnding();
+                } else if (newState === 'CREDITS') {
+                    this.screens.credits.classList.add('active');
                 }
             }
 
