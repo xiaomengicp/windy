@@ -2370,9 +2370,15 @@
                 this.exitPos = { col: 3, row: 1 };
 
                 // 0: Empty, 1: Obstacle, 2: Block(Static), 3: Block(Regen)
-                // 4: Gap, 5: Plank, 6: Switch
+                // 4: Gap, 5: Plank, 6: Switch, 7: Start, 8: Exit
+                // 9: Collectible, 10: Door
+                // 11: HardBlock, 12: GirlButton, 13: Bell (v1.1)
                 this.selectedType = 1;
-                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit", "Col", "Door"];
+                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit", "Col", "Door", "HardBlock", "GirlBtn", "Bell"];
+
+                // v1.1: Linking system for GirlButton -> HardBlock
+                this.linkMode = false;
+                this.linkSource = null; // {col, row, type}
             }
 
             toggle() {
@@ -2445,6 +2451,28 @@
                             ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
                             ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.fillText("D", x + 15, y + 25);
                         } // Door
+                        if (val === 11) { // HardBlock
+                            ctx.fillStyle = '#2d2d2d'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+                            ctx.strokeStyle = '#444'; ctx.lineWidth = 2; ctx.strokeRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+                            ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.fillText("HB", x + 10, y + 22);
+                        }
+                        if (val === 12) { // GirlButton
+                            ctx.fillStyle = '#888'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 12, 0, Math.PI * 2); ctx.fill();
+                            ctx.strokeStyle = '#aaa'; ctx.lineWidth = 3; ctx.stroke();
+                            ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.fillText("GB", x + CELL_SIZE / 2 - 8, y + CELL_SIZE / 2 + 3);
+                        }
+                        if (val === 13) { // Bell
+                            ctx.save();
+                            ctx.translate(x + CELL_SIZE / 2, y + CELL_SIZE / 4);
+                            ctx.fillStyle = '#ffd700';
+                            ctx.beginPath();
+                            ctx.moveTo(0, CELL_SIZE * 0.2);
+                            ctx.lineTo(-CELL_SIZE * 0.15, CELL_SIZE * 0.5);
+                            ctx.lineTo(CELL_SIZE * 0.15, CELL_SIZE * 0.5);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.restore();
+                        }
                     }
                 }
                 ctx.restore();
@@ -2457,7 +2485,8 @@
                 ctx.fillText(`Selected: [${this.selectedType}] ${this.typeNames[this.selectedType]}`, 20, 50);
                 ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Stat, 3-Reg, 4-Gap, 5-Plank`, 20, 70);
                 ctx.fillText(`      6-Sw, 7-Start, 8-Exit, 9-Col, D-Door`, 20, 90);
-                ctx.fillText(`[P] Print Config`, 20, 110);
+                ctx.fillText(`      H-HardBlock, G-GirlBtn, B-Bell`, 20, 110);
+                ctx.fillText(`[P] Print Config   [L] Link Mode ${this.linkMode ? 'ON' : 'OFF'}`, 20, 130);
             }
 
             exportConfig() {
@@ -2472,12 +2501,17 @@
                     movables: [],
                     switches: [],
                     collectibles: [],
-                    doors: []
+                    doors: [],
+                    hardBlocks: [],      // v1.1
+                    girlButtons: [],     // v1.1
+                    bells: []            // v1.1
                 };
 
                 let switchCount = 0;
                 let blockCount = 0;
                 let doorCount = 0;
+                let hardBlockCount = 0;
+                let girlButtonCount = 0;
 
                 for (let r = 0; r < GRID_H; r++) {
                     for (let c = 0; c < GRID_W; c++) {
@@ -2497,6 +2531,17 @@
                         if (val === 10) {
                             doorCount++;
                             config.doors.push({ col: c, row: r, id: doorCount });
+                        }
+                        if (val === 11) {
+                            hardBlockCount++;
+                            config.hardBlocks.push({ col: c, row: r, id: `hb${hardBlockCount}` });
+                        }
+                        if (val === 12) {
+                            girlButtonCount++;
+                            config.girlButtons.push({ col: c, row: r, targetId: `hb1` }); // Default link to hb1
+                        }
+                        if (val === 13) {
+                            config.bells.push({ col: c, row: r });
                         }
                     }
                 }
@@ -2753,6 +2798,13 @@
                 if (key === 'p') editor.exportConfig();
                 if (key >= '0' && key <= '9') editor.selectedType = parseInt(key);
                 if (key === 'd') editor.selectedType = 10;
+                if (key === 'h') editor.selectedType = 11; // HardBlock
+                if (key === 'g') editor.selectedType = 12; // GirlButton
+                if (key === 'b') editor.selectedType = 13; // Bell
+                if (key === 'l') {
+                    editor.linkMode = !editor.linkMode;
+                    if (!editor.linkMode) editor.linkSource = null;
+                }
                 return;
             }
 
