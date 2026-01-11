@@ -3169,17 +3169,23 @@
 
                 // Check Win Condition (Girl reached goal)
                 // Check Win Condition (Girl reached goal)
+                // Check Win Condition (Girl reached goal)
                 if (girl && girl.state === 'REACHED_GOAL') {
-                    if (!girl.dissolved) {
-                        girl.dissolved = true;
-                        // Spawn particles
-                        for (let i = 0; i < 30; i++) {
-                            particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fff');
-                            particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fc0');
-                        }
+                    if (!girl.celebrating) {
+                        girl.celebrating = true;
 
-                        // Play win sound
+                        // Play win sound immediately
                         if (audioSystem) audioSystem.playWin();
+
+                        // Delay dissolve to show happy expression
+                        setTimeout(() => {
+                            if (girl) girl.dissolved = true;
+                            // Spawn particles
+                            for (let i = 0; i < 30; i++) {
+                                particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fff');
+                                particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fc0');
+                            }
+                        }, 800);
 
                         // Delay completion
                         setTimeout(() => {
@@ -3187,7 +3193,7 @@
                             if (gameManager.state !== 'TRANSITION') {
                                 gameManager.completeLevel(starsCollected);
                             }
-                        }, 1000);
+                        }, 1800);
                     }
                 }
 
