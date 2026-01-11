@@ -1425,11 +1425,12 @@
                                 obj.y = this.y;
                                 obj.vx = 0;
                                 obj.vy = 0;
+
+                                // Only trigger effects on first lock
+                                audioSystem.playImpact('heavy');
+                                addShake(15);
                             }
                             this.filledBy = obj; // 记录是哪个木板填的
-                            audioSystem.playImpact('heavy');
-                            addShake(15); // Screen Shake Trigger
-                            // Particles?
                             return;
                         }
                     }
