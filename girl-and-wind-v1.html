@@ -1171,14 +1171,14 @@
             }
 
             planPath(obstacles, blockages, gaps) {
-                // If queue has items, continue consuming
-                if (this.pathQueue.length > 0) return;
-
-                // If close to goal, done
-                if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) {
+                // PRIORITY: If close to goal, done - must check FIRST
+                if (Math.abs(this.x - this.goalX) < 10 && Math.abs(this.y - this.goalY) < 10) {
                     this.state = 'REACHED_GOAL';
                     return;
                 }
+
+                // If queue has items, continue consuming
+                if (this.pathQueue.length > 0) return;
 
                 // 尝试生成完整路径
                 const path = findGridPath(this.x, this.y, this.goalX, this.goalY, obstacles, blockages, gaps);
