@@ -941,56 +941,6 @@ const LEVELS_DATA = [
       "row": 1
     },
     "obstacles": [],
-    "blockages": [
-      {
-        "col": 3,
-        "row": 0,
-        "type": "static",
-        "id": 1
-      },
-      {
-        "col": 2,
-        "row": 1,
-        "type": "static",
-        "id": 2
-      },
-      {
-        "col": 3,
-        "row": 2,
-        "type": "iron_regen"
-      },
-      {
-        "col": 2,
-        "row": 3,
-        "type": "iron_regen"
-      }
-    ],
-    "gaps": [],
-    "movables": [],
-    "switches": [],
-    "collectibles": [
-      {
-        "col": 3,
-        "row": 3
-      }
-    ],
-    "doors": [],
-    "hardBlocks": [],
-    "girlButtons": [],
-    "bells": [],
-    "quote": "To fly is to let go of the ground."
-  },
-  {
-    "id": 20,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [],
     "blockages": [],
     "gaps": [
       {
@@ -1027,7 +977,7 @@ const LEVELS_DATA = [
     "quote": "Barriers dissolve in the wind's embrace."
   },
   {
-    "id": 21,
+    "id": 20,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -1088,7 +1038,7 @@ const LEVELS_DATA = [
     "quote": "The final door opens to the sky."
   },
   {
-    "id": 22,
+    "id": 21,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -1145,7 +1095,7 @@ const LEVELS_DATA = [
     "quote": "She has become the wind itself."
   },
   {
-    "id": 23,
+    "id": 22,
     "gridStart": {
       "col": 0,
       "row": 1
