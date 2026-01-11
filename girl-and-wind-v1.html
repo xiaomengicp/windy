@@ -367,6 +367,11 @@
             shakeIntensity = Math.min(shakeIntensity + amount, 25);
         }
 
+        // --- WIND FATIGUE ---
+        let windFatigue = 0; // 0 = fresh, 100 = exhausted
+        const FATIGUE_RATE = 15; // Per second of active use
+        const RECOVERY_RATE = 25; // Per second when idle
+
         // Configuration
         const GIRL_SIZE = 40; // Smaller relative to cell (half size) for "small" feel
         const GIRL_SPEED = 150; // Adjusted for larger scale
@@ -1688,6 +1693,9 @@
                 if (!this.active) return;
                 const windReach = 250;
 
+                // Calculate fatigue multiplier (max 70% reduction)
+                const fatigueMultiplier = 1 - (windFatigue / 100) * 0.7;
+
                 for (let obj of movables) {
                     const toObjX = obj.x + obj.width / 2 - this.x;
                     const toObjY = obj.y + obj.height / 2 - this.y;
@@ -1696,7 +1704,8 @@
                     if (distance < windReach) {
                         const dot = (toObjX * this.direction.x + toObjY * this.direction.y) / distance;
                         if (dot > 0.5) {
-                            const forceMagnitude = this.strength * (1 - distance / windReach);
+                            const baseForceMagnitude = this.strength * (1 - distance / windReach);
+                            const forceMagnitude = baseForceMagnitude * fatigueMultiplier;
                             const fx = this.direction.x * forceMagnitude;
                             const fy = this.direction.y * forceMagnitude;
                             obj.applyForce(fx, fy);
@@ -1744,6 +1753,9 @@
                     }
                 }
 
+                // Calculate visual fatigue factor
+                const fatigueVisual = windFatigue / 100;
+
                 // Draw streams
                 for (let i = this.streams.length - 1; i >= 0; i--) {
                     let s = this.streams[i];
@@ -1755,7 +1767,13 @@
                     ctx.beginPath();
                     ctx.moveTo(s.x, s.y);
                     ctx.lineTo(s.x + this.direction.x * s.len, s.y + this.direction.y * s.len);
-                    ctx.strokeStyle = `rgba(100, 255, 255, ${s.alpha * 0.5})`;
+
+                    // Fade to gray when fatigued
+                    const freshness = 1 - fatigueVisual;
+                    const r = 100 + (155 - 100) * fatigueVisual; // 100 -> 155 (gray)
+                    const g = 255;
+                    const b = 255 - (55 * fatigueVisual); // 255 -> 200
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${s.alpha * 0.5 * freshness})`;
                     ctx.lineWidth = s.width;
                     ctx.stroke();
 
@@ -1774,9 +1792,10 @@
                     const endX = this.x + this.direction.x * 150;
                     const endY = this.y + this.direction.y * 150;
 
+                    const freshness = 1 - fatigueVisual;
                     const grad = ctx.createLinearGradient(this.x, this.y, endX, endY);
                     grad.addColorStop(0, 'rgba(100, 255, 255, 0.0)');
-                    grad.addColorStop(0.2, 'rgba(100, 255, 255, 0.3)');
+                    grad.addColorStop(0.2, `rgba(100, 255, 255, ${0.3 * freshness})`);
                     grad.addColorStop(1, 'rgba(100, 255, 255, 0.0)');
 
                     ctx.beginPath();
@@ -1976,6 +1995,217 @@
             }
         }
 
+        // Hard Block - v1.1 New Entity
+        // Can be switched by GirlButton to become blowable
+        class HardBlock {
+            constructor(x, y, width, height, id = null) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.id = id;
+                this.blocked = true;
+                this.switchable = false;
+                this.opacity = 1.0;
+
+                // Shatter parts
+                this.parts = [];
+                const cols = 3, rows = 3;
+                const partW = width / cols, partH = height / rows;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        this.parts.push({
+                            ox: c * partW, oy: r * partH,
+                            w: partW - 2, h: partH - 2,
+                            vx: 0, vy: 0
+                        });
+                    }
+                }
+            }
+
+            makeSwitchable() {
+                this.switchable = true;
+                audioSystem.playSwitch();
+            }
+
+            checkWind(wind) {
+                if (!this.switchable || !this.blocked || !wind.active) return false;
+
+                const toBlockX = this.x + this.width / 2 - wind.x;
+                const toBlockY = this.y + this.height / 2 - wind.y;
+                const distance = Math.sqrt(toBlockX * toBlockX + toBlockY * toBlockY);
+
+                if (distance < 200) {
+                    const dot = (toBlockX * wind.direction.x + toBlockY * wind.direction.y) / distance;
+                    if (dot > 0.6) {
+                        this.blocked = false;
+                        particles.spawn(this.x + this.width / 2, this.y + this.height / 2, 'dust', 10);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                if (!this.blocked && this.opacity <= 0) return;
+
+                if (this.blocked) {
+                    // Thomas Was Alone: solid geometric
+                    ctx.fillStyle = this.switchable ? '#8b4513' : '#2d2d2d';
+
+                    for (let p of this.parts) {
+                        ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, p.h);
+                        ctx.fillStyle = this.switchable ? '#a0522d' : '#3a3a3a';
+                        ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, 4);
+                        ctx.fillStyle = this.switchable ? '#8b4513' : '#2d2d2d';
+                    }
+
+                    ctx.strokeStyle = this.switchable ? '#cd853f' : '#444';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+                    if (this.id) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '10px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(this.id, this.x + this.width / 2, this.y + this.height / 2);
+                    }
+                } else {
+                    if (this.opacity > 0) {
+                        this.opacity -= 0.02;
+                        for (let p of this.parts) {
+                            if (!p.vx) {
+                                p.vx = (Math.random() - 0.5) * 10;
+                                p.vy = (Math.random() - 0.5) * 10;
+                            }
+                            p.ox += p.vx;
+                            p.oy += p.vy;
+                            ctx.fillStyle = `rgba(139, 69, 19, ${this.opacity})`;
+                            ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, p.h);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Girl Button - v1.1 New Entity
+        // Only triggered by Girl, not wind
+        class GirlButton {
+            constructor(x, y, width, height, targetId = null) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.targetId = targetId;
+                this.pressed = false;
+            }
+
+            checkGirl(girl) {
+                if (this.pressed || !girl) return;
+
+                // AABB collision
+                if (girl.x < this.x + this.width &&
+                    girl.x + GIRL_SIZE > this.x &&
+                    girl.y < this.y + this.height &&
+                    girl.y + GIRL_SIZE > this.y) {
+
+                    this.pressed = true;
+                    audioSystem.playSwitch();
+
+                    // Find and trigger target Hard Block
+                    const target = hardBlocks.find(hb => hb.id === this.targetId);
+                    if (target) {
+                        target.makeSwitchable();
+                    }
+                }
+            }
+
+            draw(ctx) {
+                // Thomas Was Alone: circular button
+                const centerX = this.x + this.width / 2;
+                const centerY = this.y + this.height / 2;
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, this.width * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = this.pressed ? '#4a4' : '#888';
+                ctx.fill();
+
+                ctx.strokeStyle = this.pressed ? '#6f6' : '#aaa';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Target ID indicator
+                if (this.targetId && !this.pressed) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '9px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.targetId, centerX, centerY + 25);
+                }
+            }
+        }
+
+        // Bell - v1.1 Wind Toy
+        // Decorative, reacts to wind but no gameplay impact
+        class Bell {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.swayAngle = 0;
+                this.swaySpeed = 0;
+                this.lastChime = 0;
+            }
+
+            checkWind(wind) {
+                if (!wind.active) return;
+
+                const dx = wind.x - (this.x + this.width / 2);
+                const dy = wind.y - (this.y + this.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 150) {
+                    const force = (1 - dist / 150) * 0.1;
+                    const windDir = Math.atan2(dy, dx);
+                    this.swaySpeed += Math.cos(windDir) * force;
+
+                    // Chime on strong sway
+                    if (Math.abs(this.swayAngle) > 0.3 && Date.now() - this.lastChime > 500) {
+                        audioSystem.playExpression('!'); // Reuse for light chime
+                        this.lastChime = Date.now();
+                    }
+                }
+            }
+
+            update(dt) {
+                this.swayAngle += this.swaySpeed;
+                this.swaySpeed *= 0.95; // Damping
+                this.swayAngle *= 0.98; // Return to center
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y);
+                ctx.rotate(this.swayAngle);
+
+                // Thomas Was Alone: simple triangle
+                ctx.fillStyle = '#ffd700'; // Gold
+                ctx.beginPath();
+                ctx.moveTo(0, this.height * 0.3);
+                ctx.lineTo(-this.width * 0.3, this.height);
+                ctx.lineTo(this.width * 0.3, this.height);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#ffed4e';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
         // --- LEVEL SYSTEM ---
         let LEVELS = typeof LEVELS_DATA !== 'undefined' ? LEVELS_DATA : [];
 
@@ -1989,6 +2219,9 @@
         let switches = [];
         let collectibles = [];
         let doors = [];
+        let hardBlocks = [];  // v1.1
+        let girlButtons = [];  // v1.1
+        let bells = [];  // v1.1
         let wind = new Wind();
 
         // Helper to get grid position
@@ -2091,6 +2324,33 @@
                 levelData.doors.forEach(d => {
                     const pos = getGridPos(d.col, d.row);
                     doors.push(new Door(pos.x, pos.y, CELL_SIZE, CELL_SIZE, d.id));
+                });
+            }
+
+            // Setup hard blocks (v1.1)
+            hardBlocks = [];
+            if (levelData.hardBlocks) {
+                levelData.hardBlocks.forEach(hb => {
+                    const pos = getGridPos(hb.col, hb.row);
+                    hardBlocks.push(new HardBlock(pos.x, pos.y, CELL_SIZE, CELL_SIZE, hb.id));
+                });
+            }
+
+            // Setup girl buttons (v1.1)
+            girlButtons = [];
+            if (levelData.girlButtons) {
+                levelData.girlButtons.forEach(gb => {
+                    const pos = getGridPos(gb.col, gb.row);
+                    girlButtons.push(new GirlButton(pos.x, pos.y, CELL_SIZE, CELL_SIZE, gb.targetId));
+                });
+            }
+
+            // Setup bells (v1.1)
+            bells = [];
+            if (levelData.bells) {
+                levelData.bells.forEach(b => {
+                    const pos = getGridPos(b.col, b.row);
+                    bells.push(new Bell(pos.x, pos.y, CELL_SIZE, CELL_SIZE));
                 });
             }
 
@@ -2610,6 +2870,8 @@
                 for (let obj of movables) obj.update(dt);
                 for (let blk of blockages) blk.update(dt);
                 for (let door of doors) door.update(dt);
+                for (let bell of bells) bell.update(dt); // v1.1
+
                 for (let s of switches) {
                     s.update(dt);
                     if (s.active && s.targetId) {
@@ -2621,15 +2883,37 @@
 
                 const unlockedMovables = movables.filter(m => !m.isLocked);
                 const blockedDoors = doors.filter(d => d.blocked);
-                if (girl) girl.update(dt, obstacles.concat(unlockedMovables).concat(blockedDoors), blockages, gaps, switches, collectibles);
+                const blockedHardBlocks = hardBlocks.filter(hb => hb.blocked); // v1.1
+
+                if (girl) {
+                    girl.update(dt,
+                        obstacles.concat(unlockedMovables).concat(blockedDoors).concat(blockedHardBlocks),
+                        blockages, gaps, switches, collectibles);
+
+                    // Check girl buttons (v1.1)
+                    for (let gb of girlButtons) gb.checkGirl(girl);
+                }
 
                 // Update collectibles
                 for (let col of collectibles) col.update(dt, girl);
 
+                // Update wind fatigue
                 if (wind.active) {
+                    windFatigue += FATIGUE_RATE * dt;
+                    if (windFatigue > 100) windFatigue = 100;
+
                     wind.pushMovables(movables);
                     wind.checkBlockages(blockages);
                     wind.checkSwitches(switches);
+
+                    // Check hard blocks (v1.1)
+                    for (let hb of hardBlocks) hb.checkWind(wind);
+
+                    // Check bells (v1.1)
+                    for (let bell of bells) bell.checkWind(wind);
+                } else {
+                    windFatigue -= RECOVERY_RATE * dt;
+                    if (windFatigue < 0) windFatigue = 0;
                 }
 
                 // Check Win Condition (Girl reached goal)
@@ -2763,10 +3047,13 @@
             for (let gap of gaps) gap.draw(ctx);
             for (let obs of obstacles) obs.draw(ctx);
             for (let blk of blockages) blk.draw(ctx);
-            for (let door of doors) door.draw(ctx); // Draw doors
+            for (let door of doors) door.draw(ctx);
+            for (let hb of hardBlocks) hb.draw(ctx); // v1.1
+            for (let gb of girlButtons) gb.draw(ctx); // v1.1
             for (let mov of movables) mov.draw(ctx);
             for (let sw of switches) sw.draw(ctx);
             for (let col of collectibles) col.draw(ctx);
+            for (let bell of bells) bell.draw(ctx); // v1.1
 
             if (girl && !girl.dissolved) girl.draw(ctx);
             wind.draw(ctx);
