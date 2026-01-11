@@ -2805,6 +2805,14 @@
                             ctx.fill();
                             ctx.restore();
                         }
+                        if (val === 14) { // IronRegenBlock
+                            ctx.fillStyle = '#4a5568'; // Metallic grey
+                            ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+                            ctx.strokeStyle = '#e53e3e'; // Red border hint
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+                            ctx.fillStyle = '#fff'; ctx.font = '9px Arial'; ctx.fillText("IRON", x + 8, y + 22);
+                        }
                     }
                 }
                 ctx.restore();
@@ -3136,6 +3144,8 @@
                 if (key === 'h') editor.selectedType = 11; // HardBlock
                 if (key === 'g') editor.selectedType = 12; // GirlButton
                 if (key === 'b') editor.selectedType = 13; // Bell
+                if (key === 'b') editor.selectedType = 13; // Bell
+                if (key === 'i') editor.selectedType = 14; // IronRegenBlock
                 if (key === 'l') {
                     editor.linkMode = !editor.linkMode;
                     if (!editor.linkMode) editor.linkSource = null;
