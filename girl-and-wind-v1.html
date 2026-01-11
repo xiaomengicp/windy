@@ -1529,6 +1529,7 @@
                                 // Only trigger effects on first lock
                                 audioSystem.playImpact('heavy');
                                 addShake(15);
+                                if (window.gameManager) window.gameManager.envVersion++;
                             }
                             this.filledBy = obj; // 记录是哪个木板填的
                             return;
@@ -1811,6 +1812,11 @@
                             // Interaction particles
                             if (Math.random() < 0.1) {
                                 particles.spawn(obj.x + Math.random() * obj.width, obj.y + Math.random() * obj.height, 'dust', 1);
+                            }
+
+                            // Notify AI (Throttle to avoid spamming version)
+                            if (window.gameManager && Math.random() < 0.1) {
+                                window.gameManager.envVersion++;
                             }
                         }
                     }
@@ -2431,6 +2437,9 @@
                         const pitch = 0.9 + Math.random() * 0.2; // Slight pitch variation
                         audioSystem.playChime(pitch);
                         this.lastChime = Date.now();
+
+                        // Notify AI of interaction
+                        if (window.gameManager) window.gameManager.envVersion++;
                     }
                 }
             }
