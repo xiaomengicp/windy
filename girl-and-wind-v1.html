@@ -2495,8 +2495,18 @@
             }
 
             static load() {
-                const raw = localStorage.getItem('windy_save_v1');
-                if (raw) return JSON.parse(raw);
+                try {
+                    const raw = localStorage.getItem('windy_save_v1');
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        // Validate and ensure defaults
+                        if (!data.maxLevel) data.maxLevel = 1;
+                        if (!data.stars) data.stars = {};
+                        return data;
+                    }
+                } catch (e) {
+                    console.error("Save load failing, resetting", e);
+                }
                 return { maxLevel: 1, stars: {} };
             }
 
@@ -2605,8 +2615,12 @@
             }
 
             startLevel(id) {
-                if (!LEVELS.find(l => l.id === id)) return;
+                if (!LEVELS.find(l => l.id === id)) {
+                    console.error("Level ID not found:", id);
+                    return;
+                }
 
+                console.log("Starting Level:", id);
                 this.currentLevelId = id;
                 // Transition
                 this.screens.transition.style.opacity = 1;
