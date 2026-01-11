@@ -1035,12 +1035,23 @@
                         this.stateTimer += dt;
                         this.expression = '...';
 
-                        // 每次思考后都重新检查环境并尝试走
-                        this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
-                        // 总是进入 HESITATE 状态，然后重新尝试走
-                        this.state = 'HESITATE';
-                        this.stateTimer = 0;
-                        this.expression = '!';
+                        // Check Environment to see if we have a plan
+                        const foundPlan = this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
+
+                        if (foundPlan) {
+                            // We found something to do! Show !
+                            this.state = 'HESITATE';
+                            this.stateTimer = 0;
+                            this.expression = '!';
+                        } else {
+                            // No new plan, just stuck or waiting
+                            // Don't show '!', go back to STOPPED or stay THINKING for a bit
+                            // If we just transition to STOPPED, we will show '?'
+                            this.state = 'STOPPED';
+                            this.stateTimer = 0;
+                            // Keep expression as '...' or let STOPPED set it to '?'
+                            this.expression = '...';
+                        }
                         break;
 
                     case 'HESITATE':
