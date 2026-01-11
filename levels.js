@@ -223,31 +223,28 @@ const LEVELS_DATA = [
   },
   {
     "id": 14,
-    "gridStart": { "col": 0, "row": 1 },
+    "gridStart": { "col": 0, "row": 0 },
     "gridExit": { "col": 3, "row": 3 },
     "obstacles": [
-      { "col": 2, "row": 1 }
+      { "col": 1, "row": 0 }
     ],
     "blockages": [],
     "gaps": [],
     "movables": [],
     "switches": [],
     "collectibles": [
-      { "col": 0, "row": 0 },
-      { "col": 3, "row": 0 }
+      { "col": 2, "row": 0 }
     ],
     "doors": [],
     "hardBlocks": [
-      { "col": 1, "row": 1, "id": "hb1" },
-      { "col": 1, "row": 3, "id": "hb2" }
+      { "col": 2, "row": 2, "id": "hb1" }
     ],
     "girlButtons": [
-      { "col": 0, "row": 2, "targetId": "hb1" },
-      { "col": 2, "row": 3, "targetId": "hb2" }
+      { "col": 1, "row": 3, "targetId": "hb1" }
     ],
     "bells": [
-      { "col": 3, "row": 1 },
-      { "col": 3, "row": 2 }
+      { "col": 3, "row": 0 },
+      { "col": 0, "row": 3 }
     ]
   }
 ]
