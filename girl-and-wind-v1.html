@@ -3144,15 +3144,11 @@
                     if (distToGoal < 15) {
                         girl.state = 'REACHED_GOAL';
                         girl.pathQueue = []; // Clear any remaining waypoints
-                        girl.goalReachedTime = Date.now(); // Record when reached
                     }
                 }
 
                 if (girl && girl.state === 'REACHED_GOAL') {
-                    // Wait for expression display (0.8 seconds) before dissolving
-                    const timeSinceGoal = Date.now() - (girl.goalReachedTime || Date.now());
-
-                    if (timeSinceGoal > 800 && !girl.dissolved) {
+                    if (!girl.dissolved) {
                         girl.dissolved = true;
                         // Spawn particles
                         for (let i = 0; i < 30; i++) {
