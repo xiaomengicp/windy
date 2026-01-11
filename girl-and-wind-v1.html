@@ -1900,6 +1900,11 @@
                     if (distance < windReach) {
                         const dot = (toBlockageX * this.direction.x + toBlockageY * this.direction.y) / distance;
                         if (dot > 0.6) {
+                            // Check if blockage is an Iron block (immune after regeneration)
+                            if (blockage.isIron) {
+                                continue; // This blockage is immune to wind
+                            }
+
                             blockage.blocked = false;
 
                             // Explosion effect
@@ -2151,8 +2156,18 @@
 
                     // Main border
                     ctx.strokeStyle = '#e53e3e'; // Red lock border
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 4;
                     ctx.strokeRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2);
+
+                    // Draw a big LOCK icon or X
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#e53e3e';
+                    ctx.lineWidth = 6;
+                    ctx.moveTo(this.x + 10, this.y + 10);
+                    ctx.lineTo(this.x + this.width - 10, this.y + this.height - 10);
+                    ctx.moveTo(this.x + this.width - 10, this.y + 10);
+                    ctx.lineTo(this.x + 10, this.y + this.height - 10);
+                    ctx.stroke();
 
                 } else {
                     // Normal behavior (Regenerating or Open)
