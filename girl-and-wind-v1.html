@@ -200,6 +200,9 @@
             }
 
             update(dt) {
+                // Update Audio
+                audioSystem.updateWind(this.active, this.active ? 0.5 + Math.random() * 0.2 : 0);
+
                 for (let i = this.particles.length - 1; i >= 0; i--) {
                     let p = this.particles[i];
                     p.update(dt);
@@ -226,6 +229,192 @@
         }
 
         const particles = new ParticleSystem();
+
+        // ===============================
+        // AUDIO SYSTEM (Procedural)
+        // ===============================
+        class AudioSystem {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.windNode = null;
+                this.windFilter = null;
+                this.windGain = null;
+                this.isInit = false;
+                this.windActive = false;
+            }
+
+            init() {
+                if (this.isInit) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+
+                this.ctx = new AudioContext();
+
+                // Master Compressor to prevent clipping
+                const compressor = this.ctx.createDynamicsCompressor();
+                compressor.threshold.setValueAtTime(-10, this.ctx.currentTime);
+                compressor.knee.setValueAtTime(40, this.ctx.currentTime);
+                compressor.ratio.setValueAtTime(12, this.ctx.currentTime);
+                compressor.attack.setValueAtTime(0, this.ctx.currentTime);
+                compressor.release.setValueAtTime(0.25, this.ctx.currentTime);
+                compressor.connect(this.ctx.destination);
+
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.5; // Overall volume
+                this.masterGain.connect(compressor);
+
+                this._initWind();
+                this.isInit = true;
+
+                // Resume if suspended (browser policy)
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            _initWind() {
+                // White Noise Buffer
+                const bufferSize = this.ctx.sampleRate * 2; // 2 seconds buffer
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                // Source (Looping)
+                this.windNode = this.ctx.createBufferSource();
+                this.windNode.buffer = buffer;
+                this.windNode.loop = true;
+
+                // Filter (Bandpass)
+                this.windFilter = this.ctx.createBiquadFilter();
+                this.windFilter.type = 'bandpass';
+                this.windFilter.frequency.value = 800;
+                this.windFilter.Q.value = 1;
+
+                // Gain
+                this.windGain = this.ctx.createGain();
+                this.windGain.gain.value = 0;
+
+                // Connect: Noise -> Filter -> Gain -> Master
+                this.windNode.connect(this.windFilter);
+                this.windFilter.connect(this.windGain);
+                this.windGain.connect(this.masterGain);
+
+                this.windNode.start();
+            }
+
+            // Update wind sound based on intensity (0.0 - 1.0)
+            updateWind(active, intensity = 0.5) {
+                if (!this.isInit) return;
+
+                // Resume context if needed
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const t = this.ctx.currentTime;
+                // Gain Ramp
+                if (active) {
+                    this.windGain.gain.setTargetAtTime(0.3 * intensity + 0.1, t, 0.1);
+                } else {
+                    this.windGain.gain.setTargetAtTime(0, t, 0.2);
+                }
+
+                // Frequency & Q Sweep
+                // Higher intensity = higher pitch + more resonance (howling)
+                const targetFreq = 800 + intensity * 1200; // 800 -> 2000 Hz
+                const targetQ = 1 + intensity * 8; // 1 -> 9
+
+                this.windFilter.frequency.setTargetAtTime(targetFreq, t, 0.1);
+                this.windFilter.Q.setTargetAtTime(targetQ, t, 0.1);
+            }
+
+            // Play one-shot tone (Sine)
+            _playTone(freq, duration, type = 'sine', vol = 0.2) {
+                if (!this.isInit) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t);
+
+                gain.gain.setValueAtTime(vol, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start();
+                osc.stop(t + duration);
+                return { osc, gain }; // Return for modulation
+            }
+
+            // Girl Expressions
+            playExpression(type) {
+                if (!this.isInit) return;
+                const t = this.ctx.currentTime;
+
+                if (type === '!') {
+                    // Surprise: Chirp up
+                    const { osc } = this._playTone(800, 0.15, 'sine', 0.3);
+                    osc.frequency.linearRampToValueAtTime(1200, t + 0.1);
+                } else if (type === '?') {
+                    // Confused: Slide down with vibrato
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(600, t);
+                    osc.frequency.linearRampToValueAtTime(400, t + 0.3);
+
+                    // Vibrato
+                    const lfo = this.ctx.createOscillator();
+                    lfo.frequency.value = 10; // 10Hz wobble
+                    const lfoGain = this.ctx.createGain();
+                    lfoGain.gain.value = 20; // 20Hz depth
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(osc.frequency);
+                    lfo.start();
+
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start();
+                    osc.stop(t + 0.3);
+                } else if (type === '♥') {
+                    // Love: Major 3rd chord
+                    this._playTone(523.25, 0.6, 'sine', 0.2); // C5
+                    this._playTone(659.25, 0.6, 'sine', 0.2); // E5
+                }
+            }
+
+            // Physics / Environment
+            playImpact() {
+                if (!this.isInit) return;
+                // Heavy thud
+                const { osc } = this._playTone(100, 0.2, 'triangle', 0.3);
+                // Pitch drop for weight
+                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
+            }
+
+            playSwitch() {
+                if (!this.isInit) return;
+                // Mechanical click
+                this._playTone(800, 0.05, 'square', 0.15);
+            }
+
+            playCollect(count) {
+                if (!this.isInit) return;
+                // Pentatonic scale climbing
+                const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C D E G A C
+                const freq = scale[count % scale.length] * (1 + Math.floor(count / scale.length));
+                this._playTone(freq, 0.3, 'sine', 0.25);
+                this._playTone(freq * 1.5, 0.3, 'sine', 0.1); // Harmonic 5th
+            }
+        }
+
+        const audioSystem = new AudioSystem();
 
         // ===============================
         // GRID-BASED BFS PATHFINDING
@@ -408,7 +597,17 @@
                 this.bobOffset = 0;
                 this.eyeOffset = { x: 0, y: 0 };
                 this.blinkTimer = 0;
-                this.expression = '';
+                this._expression = '';
+            }
+
+            get expression() { return this._expression; }
+            set expression(val) {
+                if (this._expression !== val) {
+                    this._expression = val;
+                    if (val === '!' || val === '?' || val === '♥') {
+                        audioSystem.playExpression(val);
+                    }
+                }
             }
 
 
@@ -901,6 +1100,9 @@
 
                     if (dist < 35) {
                         this.collected = true;
+                        // Count how many already collected for pitch climbing
+                        const count = collectibles ? collectibles.filter(c => c.collected).length : 0;
+                        audioSystem.playCollect(count);
                     }
                 }
             }
@@ -979,6 +1181,7 @@
                                 obj.vy = 0;
                             }
                             this.filledBy = obj; // 记录是哪个木板填的
+                            audioSystem.playImpact();
                             return;
                         }
                     }
@@ -1111,6 +1314,15 @@
 
             update(dt) {
                 // Base class does nothing, RegeneratingBlockage overrides this
+            }
+
+            open() {
+                if (this.blocked) {
+                    this.opening = true; // Start animation
+                    this.blocked = false; // Logically open immediately? Or wait? 
+                    // Let's say logically open so pathfinding sees it, but visual lags
+                    audioSystem.playSwitch(); // Mechanical sound
+                }
             }
 
             draw(ctx) {
@@ -1259,6 +1471,7 @@
                     if (dist < this.size + s.width / 2) {
                         if (!s.active) {
                             s.active = true;
+                            audioSystem.playSwitch();
                             // Trigger logic handled in game loop or switch update
                         }
                     }
@@ -2040,6 +2253,9 @@
         const activeKeys = new Set();
 
         window.addEventListener('keydown', (e) => {
+            // Init audio context on first interaction
+            if (!audioSystem.isInit) audioSystem.init();
+
             const key = e.key.toLowerCase();
 
             // Level Controls
@@ -2112,6 +2328,9 @@
         });
 
         canvas.addEventListener('mousedown', (e) => {
+            // Init audio context on first interaction
+            if (!audioSystem.isInit) audioSystem.init();
+
             if (editor.active) {
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = canvas.width / rect.width;
