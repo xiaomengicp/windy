@@ -3004,6 +3004,7 @@
         }
 
         const gameManager = new GameManager();
+        window.gameManager = gameManager; // Expose for envVersion check in Girl class
 
         const editor = new LevelEditor();
 
