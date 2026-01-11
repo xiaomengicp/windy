@@ -696,6 +696,20 @@
                 osc2.stop(t + 0.8);
             }
 
+            playCollect(count = 0) {
+                if (!this.isInit) return;
+                const t = this.ctx.currentTime;
+                // Pitch rises with count: C5, E5, G5, C6...
+                // Base: 523.25
+                const semitones = [0, 4, 7, 12, 16, 19, 24]; // Major chord arpeggio
+                const index = Math.min(count, semitones.length - 1);
+                const pitch = 523.25 * Math.pow(2, semitones[index] / 12);
+
+                // Sparkle sound (Sine + Triangle mix)
+                this._playTone(pitch, 0.1, 'sine', 0.15);
+                setTimeout(() => this._playTone(pitch * 2, 0.1, 'sine', 0.1), 50);
+            }
+
             playWin() {
                 if (!this.isInit) return;
                 // Victory Fanfare: C Major Arpeggio
@@ -827,7 +841,7 @@
                     const key = `${newCol},${newRow}`;
 
                     if (visited.has(key)) continue;
-                    if (!isGridCellWalkable(newCol, newRow, obstacles, blockages, gaps, ignoreEntities)) continue;
+                    if (!isGridCellWalkable(newCol, newRow, obstacles, blockages, gaps, hardBlocks, ignoreEntities)) continue;
 
                     visited.add(key);
 
@@ -2517,1504 +2531,1504 @@
 
         // --- LEVEL SYSTEM ---
         const LEVELS = [
-    {
-        "id": 1,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
             {
-                "col": 3,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 2,
-                "row": 1,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "static",
-                "id": 3
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "static",
-                "id": 4
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 2,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 2,
-                "row": 3
-            }
-        ],
-        "blockages": [
-            {
-                "col": 1,
-                "row": 2,
-                "type": "static",
-                "id": 1
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 3,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            }
-        ],
-        "blockages": [
-            {
-                "col": 1,
-                "row": 2,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "static",
-                "id": 3
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "static",
-                "id": 4
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 5
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "static",
-                "id": 6
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 4,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "blockages": [
-            {
-                "col": 2,
-                "row": 1,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 2
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [
-            {
-                "col": 3,
-                "row": 3
-            }
-        ],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 5,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 2,
-                "row": 2,
-                "type": "static",
-                "id": 1
-            }
-        ],
-        "gaps": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "movables": [
-            {
-                "col": 1,
-                "row": 3,
-                "type": "plank"
-            }
-        ],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 6,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            }
-        ],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 2,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "static",
-                "id": 3
-            }
-        ],
-        "gaps": [
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "movables": [
-            {
-                "col": 0,
-                "row": 3,
-                "type": "plank"
-            }
-        ],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 7,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [],
-        "gaps": [
-            {
-                "col": 0,
-                "row": 0
-            },
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 1,
-                "row": 1
-            },
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 3,
-                "row": 2
-            },
-            {
-                "col": 0,
-                "row": 3
-            },
-            {
-                "col": 1,
-                "row": 3
-            }
-        ],
-        "movables": [
-            {
-                "col": 1,
-                "row": 0,
-                "type": "plank"
-            }
-        ],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 8,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "blockages": [
-            {
-                "col": 3,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            }
-        ],
-        "gaps": [
-            {
-                "col": 2,
-                "row": 3
-            }
-        ],
-        "movables": [
-            {
-                "col": 0,
-                "row": 0,
-                "type": "plank"
-            }
-        ],
-        "switches": [],
-        "collectibles": [
-            {
-                "col": 3,
-                "row": 3
-            }
-        ],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 9,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 2,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 2,
-                "row": 2
-            }
-        ],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "regen"
-            }
-        ],
-        "gaps": [
-            {
-                "col": 1,
-                "row": 1
-            }
-        ],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 10,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 2,
-                "row": 1,
-                "type": "regen"
-            },
-            {
-                "col": 1,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 0,
-                "row": 3,
-                "type": "regen"
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "regen"
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "regen"
-            }
-        ],
-        "gaps": [
-            {
-                "col": 3,
-                "row": 0
-            }
-        ],
-        "movables": [
-            {
-                "col": 3,
-                "row": 3,
-                "type": "plank"
-            }
-        ],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 11,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 0,
-                "type": "regen"
-            },
-            {
-                "col": 1,
-                "row": 1,
-                "type": "regen"
-            },
-            {
-                "col": 0,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "regen"
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "regen"
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "regen"
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [
-            {
-                "col": 0,
-                "row": 3
-            }
-        ],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 12,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 0,
-                "row": 0
-            },
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 1,
-                "row": 1
-            },
-            {
-                "col": 1,
-                "row": 2
-            },
-            {
-                "col": 3,
-                "row": 2
-            },
-            {
-                "col": 3,
-                "row": 3
-            }
-        ],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 3,
-                "type": "static",
-                "id": 1
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [
-            {
-                "col": 2,
-                "row": 1,
-                "id": "hb1"
-            }
-        ],
-        "girlButtons": [
-            {
-                "col": 1,
-                "row": 3,
-                "targetId": "hb1"
-            }
-        ],
-        "bells": []
-    },
-    {
-        "id": 13,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 2,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 3
-            }
-        ],
-        "gaps": [
-            {
-                "col": 3,
-                "row": 0
-            }
-        ],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [
-            {
-                "col": 2,
-                "row": 1,
-                "id": "hb1"
-            }
-        ],
-        "girlButtons": [
-            {
-                "col": 0,
-                "row": 3,
-                "targetId": "hb1"
-            }
-        ],
-        "bells": []
-    },
-    {
-        "id": 14,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            }
-        ],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 1,
-                "row": 1,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 1,
-                "row": 2,
-                "type": "static",
-                "id": 3
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "static",
-                "id": 4
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 5
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [
-            {
-                "col": 3,
-                "row": 2,
-                "id": "hb1"
-            }
-        ],
-        "girlButtons": [
-            {
-                "col": 0,
-                "row": 2,
-                "targetId": "hb1"
-            }
-        ],
-        "bells": []
-    },
-    {
-        "id": 15,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "blockages": [
-            {
-                "col": 1,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 1,
-                "row": 1,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 1,
-                "row": 2,
-                "type": "static",
-                "id": 3
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "static",
-                "id": 4
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [
-            {
-                "col": 0,
-                "row": 0
-            }
-        ],
-        "doors": [],
-        "hardBlocks": [
-            {
-                "col": 3,
-                "row": 0,
-                "id": "hb1"
-            }
-        ],
-        "girlButtons": [
-            {
-                "col": 0,
-                "row": 2,
-                "targetId": "hb1"
-            }
-        ],
-        "bells": []
-    },
-    {
-        "id": 16,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 1,
-                "row": 0
-            },
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "blockages": [],
-        "gaps": [],
-        "movables": [],
-        "switches": [
-            {
-                "col": 3,
-                "row": 0,
-                "targetId": 1
-            }
-        ],
-        "collectibles": [],
-        "doors": [
-            {
-                "col": 2,
-                "row": 1,
-                "id": 1
-            }
-        ],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 17,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 1,
-                "row": 0
-            },
-            {
-                "col": 1,
-                "row": 3
-            }
-        ],
-        "blockages": [
-            {
-                "col": 2,
-                "row": 1,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "static",
-                "id": 2
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [
-            {
-                "col": 0,
-                "row": 3,
-                "targetId": 1
-            }
-        ],
-        "collectibles": [
-            {
-                "col": 3,
-                "row": 3
-            }
-        ],
-        "doors": [
-            {
-                "col": 2,
-                "row": 3,
-                "id": 1
-            }
-        ],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 18,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 0,
-                "type": "iron_regen"
-            },
-            {
-                "col": 3,
-                "row": 0,
-                "type": "iron_regen"
-            },
-            {
-                "col": 1,
-                "row": 1,
-                "type": "iron_regen"
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "iron_regen"
-            },
-            {
-                "col": 0,
-                "row": 3,
-                "type": "iron_regen"
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "iron_regen"
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 19,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 3,
-                "row": 0,
-                "type": "iron_regen"
-            },
-            {
-                "col": 2,
-                "row": 1,
-                "type": "iron_regen"
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "iron_regen"
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 20,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 0,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 2,
-                "row": 2
-            },
-            {
-                "col": 2,
-                "row": 3
-            }
-        ],
-        "blockages": [
-            {
-                "col": 1,
-                "row": 1,
-                "type": "iron_regen"
-            },
-            {
-                "col": 1,
-                "row": 2,
-                "type": "iron_regen"
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [
-            {
-                "col": 3,
-                "row": 0,
-                "id": 1
-            }
-        ],
-        "hardBlocks": [],
-        "girlButtons": [
-            {
-                "col": 0,
-                "row": 3,
-                "targetId": "hb1"
-            }
-        ],
-        "bells": []
-    },
-    {
-        "id": 21,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 3,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 2,
-                "row": 1,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "iron_regen"
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "iron_regen"
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [
-            {
-                "col": 3,
-                "row": 3
-            }
-        ],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 22,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 0,
-                "row": 3
-            }
-        ],
-        "blockages": [
-            {
-                "col": 1,
-                "row": 2,
-                "type": "iron_regen"
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "iron_regen"
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [
-            {
-                "col": 2,
-                "row": 1,
-                "id": "hb1"
-            }
-        ],
-        "girlButtons": [
-            {
-                "col": 1,
-                "row": 3,
-                "targetId": "hb1"
-            }
-        ],
-        "bells": []
-    },
-    {
-        "id": 23,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [],
-        "gaps": [
-            {
-                "col": 3,
-                "row": 0
-            },
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 3,
-                "row": 2
-            }
-        ],
-        "movables": [
-            {
-                "col": 3,
-                "row": 3,
-                "type": "plank"
-            }
-        ],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": [
-            {
-                "col": 1,
-                "row": 2
-            }
-        ]
-    },
-    {
-        "id": 24,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 2,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 2,
-                "row": 1,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "static",
-                "id": 3
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 4
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [
-            {
-                "col": 3,
-                "row": 0
-            }
-        ],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": [
-            {
-                "col": 0,
-                "row": 3
-            },
-            {
-                "col": 3,
-                "row": 3
-            }
-        ]
-    },
-    {
-        "id": 25,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [
-            {
-                "col": 2,
-                "row": 1
-            },
-            {
-                "col": 0,
-                "row": 2
-            },
-            {
-                "col": 2,
-                "row": 2
-            },
-            {
-                "col": 0,
-                "row": 3
-            }
-        ],
-        "blockages": [
-            {
-                "col": 1,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 3,
-                "row": 0,
-                "type": "static",
-                "id": 2
-            }
-        ],
-        "gaps": [
-            {
-                "col": 2,
-                "row": 0
-            }
-        ],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    },
-    {
-        "id": 26,
-        "gridStart": {
-            "col": 0,
-            "row": 1
-        },
-        "gridExit": {
-            "col": 3,
-            "row": 1
-        },
-        "obstacles": [],
-        "blockages": [
-            {
-                "col": 0,
-                "row": 0,
-                "type": "static",
-                "id": 1
-            },
-            {
-                "col": 1,
-                "row": 0,
-                "type": "static",
-                "id": 2
-            },
-            {
-                "col": 2,
-                "row": 0,
-                "type": "static",
-                "id": 3
-            },
-            {
-                "col": 3,
-                "row": 0,
-                "type": "static",
-                "id": 4
-            },
-            {
-                "col": 1,
-                "row": 1,
-                "type": "static",
-                "id": 5
-            },
-            {
-                "col": 2,
-                "row": 1,
-                "type": "static",
-                "id": 6
-            },
-            {
-                "col": 0,
-                "row": 2,
-                "type": "static",
-                "id": 7
-            },
-            {
-                "col": 1,
-                "row": 2,
-                "type": "static",
-                "id": 8
-            },
-            {
-                "col": 2,
-                "row": 2,
-                "type": "static",
-                "id": 9
-            },
-            {
-                "col": 3,
-                "row": 2,
-                "type": "static",
-                "id": 10
-            },
-            {
-                "col": 0,
-                "row": 3,
-                "type": "static",
-                "id": 11
-            },
-            {
-                "col": 1,
-                "row": 3,
-                "type": "static",
-                "id": 12
-            },
-            {
-                "col": 2,
-                "row": 3,
-                "type": "static",
-                "id": 13
-            },
-            {
-                "col": 3,
-                "row": 3,
-                "type": "static",
-                "id": 14
-            }
-        ],
-        "gaps": [],
-        "movables": [],
-        "switches": [],
-        "collectibles": [],
-        "doors": [],
-        "hardBlocks": [],
-        "girlButtons": [],
-        "bells": []
-    }
-];
+                "id": 1,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "static",
+                        "id": 3
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "static",
+                        "id": 4
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 2,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 3
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "static",
+                        "id": 1
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 3,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "static",
+                        "id": 3
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "static",
+                        "id": 4
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 5
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "static",
+                        "id": 6
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 4,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 2
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [
+                    {
+                        "col": 3,
+                        "row": 3
+                    }
+                ],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 5,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "static",
+                        "id": 1
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "movables": [
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "plank"
+                    }
+                ],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 6,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "static",
+                        "id": 3
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "movables": [
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "type": "plank"
+                    }
+                ],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 7,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [],
+                "gaps": [
+                    {
+                        "col": 0,
+                        "row": 0
+                    },
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 1,
+                        "row": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    },
+                    {
+                        "col": 0,
+                        "row": 3
+                    },
+                    {
+                        "col": 1,
+                        "row": 3
+                    }
+                ],
+                "movables": [
+                    {
+                        "col": 1,
+                        "row": 0,
+                        "type": "plank"
+                    }
+                ],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 8,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 2,
+                        "row": 3
+                    }
+                ],
+                "movables": [
+                    {
+                        "col": 0,
+                        "row": 0,
+                        "type": "plank"
+                    }
+                ],
+                "switches": [],
+                "collectibles": [
+                    {
+                        "col": 3,
+                        "row": 3
+                    }
+                ],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 9,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 2,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 2
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "regen"
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 1,
+                        "row": 1
+                    }
+                ],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 10,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "regen"
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    }
+                ],
+                "movables": [
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "plank"
+                    }
+                ],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 11,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 0,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 1,
+                        "row": 1,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "regen"
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "regen"
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [
+                    {
+                        "col": 0,
+                        "row": 3
+                    }
+                ],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 12,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 0,
+                        "row": 0
+                    },
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 1,
+                        "row": 1
+                    },
+                    {
+                        "col": 1,
+                        "row": 2
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    },
+                    {
+                        "col": 3,
+                        "row": 3
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "type": "static",
+                        "id": 1
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "id": "hb1"
+                    }
+                ],
+                "girlButtons": [
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "targetId": "hb1"
+                    }
+                ],
+                "bells": []
+            },
+            {
+                "id": 13,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 3
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    }
+                ],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "id": "hb1"
+                    }
+                ],
+                "girlButtons": [
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "targetId": "hb1"
+                    }
+                ],
+                "bells": []
+            },
+            {
+                "id": 14,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 1,
+                        "row": 1,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "static",
+                        "id": 3
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "static",
+                        "id": 4
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 5
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "id": "hb1"
+                    }
+                ],
+                "girlButtons": [
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "targetId": "hb1"
+                    }
+                ],
+                "bells": []
+            },
+            {
+                "id": 15,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 1,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 1,
+                        "row": 1,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "static",
+                        "id": 3
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "static",
+                        "id": 4
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [
+                    {
+                        "col": 0,
+                        "row": 0
+                    }
+                ],
+                "doors": [],
+                "hardBlocks": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "id": "hb1"
+                    }
+                ],
+                "girlButtons": [
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "targetId": "hb1"
+                    }
+                ],
+                "bells": []
+            },
+            {
+                "id": 16,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 1,
+                        "row": 0
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "blockages": [],
+                "gaps": [],
+                "movables": [],
+                "switches": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "targetId": 1
+                    }
+                ],
+                "collectibles": [],
+                "doors": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "id": 1
+                    }
+                ],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 17,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 1,
+                        "row": 0
+                    },
+                    {
+                        "col": 1,
+                        "row": 3
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "static",
+                        "id": 2
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "targetId": 1
+                    }
+                ],
+                "collectibles": [
+                    {
+                        "col": 3,
+                        "row": 3
+                    }
+                ],
+                "doors": [
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "id": 1
+                    }
+                ],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 18,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 0,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 1,
+                        "row": 1,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "iron_regen"
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 19,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "iron_regen"
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 20,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 0,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 2
+                    },
+                    {
+                        "col": 2,
+                        "row": 3
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 1,
+                        "row": 1,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "iron_regen"
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "id": 1
+                    }
+                ],
+                "hardBlocks": [],
+                "girlButtons": [
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "targetId": "hb1"
+                    }
+                ],
+                "bells": []
+            },
+            {
+                "id": 21,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "iron_regen"
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [
+                    {
+                        "col": 3,
+                        "row": 3
+                    }
+                ],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 22,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 0,
+                        "row": 3
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "iron_regen"
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "iron_regen"
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "id": "hb1"
+                    }
+                ],
+                "girlButtons": [
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "targetId": "hb1"
+                    }
+                ],
+                "bells": []
+            },
+            {
+                "id": 23,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [],
+                "gaps": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 2
+                    }
+                ],
+                "movables": [
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "plank"
+                    }
+                ],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": [
+                    {
+                        "col": 1,
+                        "row": 2
+                    }
+                ]
+            },
+            {
+                "id": 24,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 2,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "static",
+                        "id": 3
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 4
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [
+                    {
+                        "col": 3,
+                        "row": 0
+                    }
+                ],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": [
+                    {
+                        "col": 0,
+                        "row": 3
+                    },
+                    {
+                        "col": 3,
+                        "row": 3
+                    }
+                ]
+            },
+            {
+                "id": 25,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [
+                    {
+                        "col": 2,
+                        "row": 1
+                    },
+                    {
+                        "col": 0,
+                        "row": 2
+                    },
+                    {
+                        "col": 2,
+                        "row": 2
+                    },
+                    {
+                        "col": 0,
+                        "row": 3
+                    }
+                ],
+                "blockages": [
+                    {
+                        "col": 1,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "static",
+                        "id": 2
+                    }
+                ],
+                "gaps": [
+                    {
+                        "col": 2,
+                        "row": 0
+                    }
+                ],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            },
+            {
+                "id": 26,
+                "gridStart": {
+                    "col": 0,
+                    "row": 1
+                },
+                "gridExit": {
+                    "col": 3,
+                    "row": 1
+                },
+                "obstacles": [],
+                "blockages": [
+                    {
+                        "col": 0,
+                        "row": 0,
+                        "type": "static",
+                        "id": 1
+                    },
+                    {
+                        "col": 1,
+                        "row": 0,
+                        "type": "static",
+                        "id": 2
+                    },
+                    {
+                        "col": 2,
+                        "row": 0,
+                        "type": "static",
+                        "id": 3
+                    },
+                    {
+                        "col": 3,
+                        "row": 0,
+                        "type": "static",
+                        "id": 4
+                    },
+                    {
+                        "col": 1,
+                        "row": 1,
+                        "type": "static",
+                        "id": 5
+                    },
+                    {
+                        "col": 2,
+                        "row": 1,
+                        "type": "static",
+                        "id": 6
+                    },
+                    {
+                        "col": 0,
+                        "row": 2,
+                        "type": "static",
+                        "id": 7
+                    },
+                    {
+                        "col": 1,
+                        "row": 2,
+                        "type": "static",
+                        "id": 8
+                    },
+                    {
+                        "col": 2,
+                        "row": 2,
+                        "type": "static",
+                        "id": 9
+                    },
+                    {
+                        "col": 3,
+                        "row": 2,
+                        "type": "static",
+                        "id": 10
+                    },
+                    {
+                        "col": 0,
+                        "row": 3,
+                        "type": "static",
+                        "id": 11
+                    },
+                    {
+                        "col": 1,
+                        "row": 3,
+                        "type": "static",
+                        "id": 12
+                    },
+                    {
+                        "col": 2,
+                        "row": 3,
+                        "type": "static",
+                        "id": 13
+                    },
+                    {
+                        "col": 3,
+                        "row": 3,
+                        "type": "static",
+                        "id": 14
+                    }
+                ],
+                "gaps": [],
+                "movables": [],
+                "switches": [],
+                "collectibles": [],
+                "doors": [],
+                "hardBlocks": [],
+                "girlButtons": [],
+                "bells": []
+            }
+        ];
 
         // 游戏状态
         let currentLevelIndex = 0; // 0-based index for LEVELS array
