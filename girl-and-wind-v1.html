@@ -451,8 +451,7 @@
             }
 
             update(dt) {
-                // Update Audio
-                audioSystem.updateWind(this.active, this.active ? 0.5 + Math.random() * 0.2 : 0);
+                // Update Audio - REMOVED (Moved to gameLoop)
 
                 for (let i = this.particles.length - 1; i >= 0; i--) {
                     let p = this.particles[i];
@@ -3208,7 +3207,24 @@
 
             // Always update particles + audio for dynamic background in menu
             particles.update(dt);
+            particles.update(dt);
             wind.draw(ctx); // Just draw wind cursor logic if needed, but maybe hide?
+
+            // Audio Update - CORRECT PLACE
+            // Intensity based on wind strength and fatigue
+            if (audioSystem && audioSystem.isInit) {
+                // Calculate intensity (0.0 - 1.0)
+                // Assuming wind.strength is around 150? Need to normalize.
+                // Let's check wind class strength default 150.
+                const normalizedStrength = Math.min(Math.max(wind.strength / 200, 0), 1);
+                // Also factor in fatigue if available
+                let finalIntensity = normalizedStrength;
+                if (typeof windFatigue !== 'undefined') {
+                    // Minor reduction if fatigued, but mainly sound depends on active
+                }
+                audioSystem.updateWind(wind.active, finalIntensity);
+            }
+
             // Actually wind needs update for drawing cursor
 
             ctx.fillStyle = THEME.bg;
