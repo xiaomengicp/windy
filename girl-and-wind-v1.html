@@ -2408,13 +2408,16 @@
             levelStartTime = Date.now(); // Record start time for animation
 
             obstacles = [];
-            // ... (rest of loadLevel is same, but I need to be careful not to delete it)
-            // Wait, replace_file_content replaces the block. I should only target the top part of loadLevel.
-
             blockages = [];
             gaps = [];
             movables = [];
             switches = [];
+            collectibles = [];
+            doors = [];
+            // v1.1 entities
+            hardBlocks = [];
+            girlButtons = [];
+            bells = [];
 
             // Setup obstacles
             if (levelData.obstacles) {
