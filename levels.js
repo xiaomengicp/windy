@@ -44,7 +44,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers of beginnings..."
+    "quote": "A clear path is a rare gift."
   },
   {
     "id": 2,
@@ -86,7 +86,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "A gentle breeze guides the way."
+    "quote": "She dances through the open air."
   },
   {
     "id": 3,
@@ -135,7 +135,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Paths diverge, but the wind knows the truth."
+    "quote": "Light and shadow guide her steps."
   },
   {
     "id": 4,
@@ -183,7 +183,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Stone and silence, broken by a breath."
+    "quote": "Do not look down, look forward."
   },
   {
     "id": 5,
@@ -244,7 +244,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "She dances with the unseen currents."
+    "quote": "Faith carries her across the abyss."
   },
   {
     "id": 6,
@@ -301,10 +301,102 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Memory fades like mist in the morning."
+    "quote": "Do not look down, look forward."
   },
   {
     "id": 7,
+    "gridStart": {
+      "col": 0,
+      "row": 1
+    },
+    "gridExit": {
+      "col": 3,
+      "row": 1
+    },
+    "obstacles": [
+      {
+        "col": 1,
+        "row": 1
+      }
+    ],
+    "blockages": [
+      {
+        "col": 1,
+        "row": 2,
+        "type": "static",
+        "id": 1
+      }
+    ],
+    "gaps": [
+      {
+        "col": 2,
+        "row": 1
+      },
+      {
+        "col": 3,
+        "row": 2
+      }
+    ],
+    "movables": [
+      {
+        "col": 1,
+        "row": 0,
+        "type": "plank"
+      },
+      {
+        "col": 1,
+        "row": 3,
+        "type": "plank"
+      }
+    ],
+    "switches": [],
+    "quote": "Do not look down, look forward."
+  },
+  {
+    "id": 8,
+    "gridStart": {
+      "col": 0,
+      "row": 1
+    },
+    "gridExit": {
+      "col": 3,
+      "row": 1
+    },
+    "obstacles": [],
+    "blockages": [
+      {
+        "col": 0,
+        "row": 0,
+        "type": "regen"
+      },
+      {
+        "col": 1,
+        "row": 1,
+        "type": "regen"
+      },
+      {
+        "col": 2,
+        "row": 1,
+        "type": "regen"
+      },
+      {
+        "col": 3,
+        "row": 2,
+        "type": "regen"
+      },
+      {
+        "col": 3,
+        "row": 3,
+        "type": "regen"
+      }
+    ],
+    "movables": [],
+    "gaps": [],
+    "switches": [],
+    "quote": "The world breathes, closing wounds in the stone."
+  },
+  {
+    "id": 9,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -355,10 +447,83 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The way forward is not always clear."
+    "quote": "Faith carries her across the abyss."
   },
   {
-    "id": 8,
+    "id": 10,
+    "gridStart": {
+      "col": 0,
+      "row": 1
+    },
+    "gridExit": {
+      "col": 3,
+      "row": 1
+    },
+    "obstacles": [
+      {
+        "col": 1,
+        "row": 1
+      }
+    ],
+    "blockages": [],
+    "gaps": [
+      {
+        "col": 1,
+        "row": 2
+      },
+      {
+        "col": 1,
+        "row": 3
+      }
+    ],
+    "movables": [
+      {
+        "col": 0,
+        "row": 0,
+        "type": "plank"
+      }
+    ],
+    "switches": [],
+    "quote": "Do not look down, look forward."
+  },
+  {
+    "id": 11,
+    "gridStart": {
+      "col": 0,
+      "row": 1
+    },
+    "gridExit": {
+      "col": 3,
+      "row": 1
+    },
+    "obstacles": [],
+    "blockages": [],
+    "gaps": [
+      {
+        "col": 1,
+        "row": 0
+      },
+      {
+        "col": 2,
+        "row": 1
+      },
+      {
+        "col": 3,
+        "row": 2
+      }
+    ],
+    "movables": [
+      {
+        "col": 3,
+        "row": 3,
+        "type": "plank"
+      }
+    ],
+    "switches": [],
+    "quote": "The void is but a step in the journey."
+  },
+  {
+    "id": 12,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -414,10 +579,10 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Strength lies in yielding to the flow."
+    "quote": "A momentary path is all she needs."
   },
   {
-    "id": 9,
+    "id": 13,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -472,10 +637,10 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Echoes of the past linger here."
+    "quote": "A momentary path is all she needs."
   },
   {
-    "id": 10,
+    "id": 14,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -538,10 +703,10 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "A gust of hope in a stagnant world."
+    "quote": "Obstacles are merely redirection."
   },
   {
-    "id": 11,
+    "id": 15,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -581,10 +746,69 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Walls are but illusions to the wind."
+    "quote": "A clear path is a rare gift."
   },
   {
-    "id": 12,
+    "id": 16,
+    "gridStart": {
+      "col": 0,
+      "row": 1
+    },
+    "gridExit": {
+      "col": 3,
+      "row": 1
+    },
+    "obstacles": [
+      {
+        "col": 2,
+        "row": 0
+      },
+      {
+        "col": 2,
+        "row": 1
+      },
+      {
+        "col": 2,
+        "row": 2
+      }
+    ],
+    "blockages": [
+      {
+        "col": 3,
+        "row": 2,
+        "type": "static",
+        "id": 1
+      },
+      {
+        "col": 0,
+        "row": 3,
+        "type": "regen"
+      },
+      {
+        "col": 2,
+        "row": 3,
+        "type": "static",
+        "id": 2
+      },
+      {
+        "col": 3,
+        "row": 3,
+        "type": "static",
+        "id": 3
+      }
+    ],
+    "gaps": [],
+    "movables": [],
+    "switches": [],
+    "collectibles": [],
+    "doors": [],
+    "hardBlocks": [],
+    "girlButtons": [],
+    "bells": [],
+    "quote": "A momentary path is all she needs."
+  },
+  {
+    "id": 17,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -642,10 +866,10 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Through the narrowest gap, freedom flows."
+    "quote": "She dances through the open air."
   },
   {
-    "id": 13,
+    "id": 18,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -704,10 +928,10 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "The storm gathers, but she is unafraid."
+    "quote": "The iron heart waits for a second breath."
   },
   {
-    "id": 14,
+    "id": 19,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -754,64 +978,10 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "What was lost may yet be found."
+    "quote": "The iron heart waits for a second breath."
   },
   {
-    "id": 15,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 3,
-        "row": 0
-      },
-      {
-        "col": 0,
-        "row": 3
-      }
-    ],
-    "blockages": [
-      {
-        "col": 1,
-        "row": 2,
-        "type": "iron_regen"
-      },
-      {
-        "col": 2,
-        "row": 3,
-        "type": "iron_regen"
-      }
-    ],
-    "gaps": [],
-    "movables": [],
-    "switches": [],
-    "collectibles": [],
-    "doors": [],
-    "hardBlocks": [
-      {
-        "col": 2,
-        "row": 1,
-        "id": "hb1"
-      }
-    ],
-    "girlButtons": [
-      {
-        "col": 1,
-        "row": 3,
-        "targetId": "hb1"
-      }
-    ],
-    "bells": [],
-    "quote": "Every blockage has a breaking point."
-  },
-  {
-    "id": 16,
+    "id": 20,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -854,10 +1024,10 @@ const LEVELS_DATA = [
         "row": 2
       }
     ],
-    "quote": "The iron heart yields to persistence."
+    "quote": "Faith carries her across the abyss."
   },
   {
-    "id": 17,
+    "id": 21,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -915,10 +1085,10 @@ const LEVELS_DATA = [
         "row": 3
       }
     ],
-    "quote": "Timeless ruins watch her passing."
+    "quote": "She dances through the open air."
   },
   {
-    "id": 18,
+    "id": 22,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -972,10 +1142,10 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "She carries the weight of the sky."
+    "quote": "Faith carries her across the abyss."
   },
   {
-    "id": 19,
+    "id": 23,
     "gridStart": {
       "col": 0,
       "row": 1
@@ -1079,520 +1249,6 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "To fly, one must first let go."
-  },
-  {
-    "id": 20,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [],
-    "blockages": [
-      {
-        "col": 3,
-        "row": 1,
-        "type": "static"
-      }
-    ],
-    "movables": [],
-    "gaps": [],
-    "switches": [],
-    "quote": "The labyrinth breathes with her."
-  },
-  {
-    "id": 21,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 1,
-        "row": 0
-      },
-      {
-        "col": 2,
-        "row": 1
-      },
-      {
-        "col": 2,
-        "row": 3
-      }
-    ],
-    "blockages": [
-      {
-        "col": 2,
-        "row": 2,
-        "type": "static",
-        "id": 1,
-        "revealsPath": {
-          "waypoint": {
-            "col": 2,
-            "row": 2
-          }
-        }
-      }
-    ],
-    "movables": [],
-    "gaps": [],
-    "switches": [],
-    "quote": "Shadows lengthen, but the wind persists."
-  },
-  {
-    "id": 22,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [],
-    "blockages": [
-      {
-        "col": 2,
-        "row": 1,
-        "type": "static",
-        "id": 1
-      }
-    ],
-    "movables": [],
-    "gaps": [],
-    "switches": [
-      {
-        "col": 2,
-        "row": 2,
-        "targetId": 1
-      }
-    ],
-    "quote": "A symphony of silence and motion."
-  },
-  {
-    "id": 23,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 3,
-        "row": 0
-      },
-      {
-        "col": 1,
-        "row": 2
-      },
-      {
-        "col": 0,
-        "row": 3
-      }
-    ],
-    "blockages": [],
-    "gaps": [
-      {
-        "col": 2,
-        "row": 1
-      }
-    ],
-    "movables": [],
-    "switches": [],
-    "quote": "The unseen path is often the surest."
-  },
-  {
-    "id": 24,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 1,
-        "row": 1
-      }
-    ],
-    "blockages": [
-      {
-        "col": 1,
-        "row": 2,
-        "type": "static",
-        "id": 1
-      }
-    ],
-    "gaps": [
-      {
-        "col": 2,
-        "row": 1
-      },
-      {
-        "col": 3,
-        "row": 2
-      }
-    ],
-    "movables": [
-      {
-        "col": 1,
-        "row": 0,
-        "type": "plank"
-      },
-      {
-        "col": 1,
-        "row": 3,
-        "type": "plank"
-      }
-    ],
-    "switches": [],
-    "quote": "She is the calm within the storm."
-  },
-  {
-    "id": 25,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 2,
-        "row": 1
-      }
-    ],
-    "blockages": [
-      {
-        "col": 3,
-        "row": 0,
-        "type": "static",
-        "id": 1
-      },
-      {
-        "col": 2,
-        "row": 3,
-        "type": "static",
-        "id": 2
-      }
-    ],
-    "gaps": [
-      {
-        "col": 1,
-        "row": 1
-      },
-      {
-        "col": 2,
-        "row": 2
-      }
-    ],
-    "movables": [],
-    "switches": [],
-    "quote": "Fragments of a dream, scattered."
-  },
-  {
-    "id": 26,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [],
-    "blockages": [
-      {
-        "col": 0,
-        "row": 0,
-        "type": "regen"
-      },
-      {
-        "col": 1,
-        "row": 1,
-        "type": "regen"
-      },
-      {
-        "col": 2,
-        "row": 1,
-        "type": "regen"
-      },
-      {
-        "col": 3,
-        "row": 2,
-        "type": "regen"
-      },
-      {
-        "col": 3,
-        "row": 3,
-        "type": "regen"
-      }
-    ],
-    "movables": [],
-    "gaps": [],
-    "switches": [],
-    "quote": "The wind knows no boundaries."
-  },
-  {
-    "id": 27,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 2,
-        "row": 0
-      },
-      {
-        "col": 2,
-        "row": 1
-      },
-      {
-        "col": 2,
-        "row": 2
-      }
-    ],
-    "blockages": [
-      {
-        "col": 3,
-        "row": 2,
-        "type": "static",
-        "id": 1
-      },
-      {
-        "col": 0,
-        "row": 3,
-        "type": "regen"
-      },
-      {
-        "col": 2,
-        "row": 3,
-        "type": "static",
-        "id": 2
-      },
-      {
-        "col": 3,
-        "row": 3,
-        "type": "static",
-        "id": 3
-      }
-    ],
-    "gaps": [],
-    "movables": [],
-    "switches": [],
-    "collectibles": [],
-    "doors": [],
-    "hardBlocks": [],
-    "girlButtons": [],
-    "bells": [],
-    "quote": "Gravity is but a suggestion."
-  },
-  {
-    "id": 28,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 1,
-        "row": 1
-      }
-    ],
-    "blockages": [],
-    "gaps": [
-      {
-        "col": 1,
-        "row": 2
-      },
-      {
-        "col": 1,
-        "row": 3
-      }
-    ],
-    "movables": [
-      {
-        "col": 0,
-        "row": 0,
-        "type": "plank"
-      }
-    ],
-    "switches": [],
-    "quote": "In the heart of the maze, a song."
-  },
-  {
-    "id": 29,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [],
-    "blockages": [],
-    "gaps": [
-      {
-        "col": 1,
-        "row": 0
-      },
-      {
-        "col": 2,
-        "row": 1
-      },
-      {
-        "col": 3,
-        "row": 2
-      }
-    ],
-    "movables": [
-      {
-        "col": 3,
-        "row": 3,
-        "type": "plank"
-      }
-    ],
-    "switches": [],
-    "quote": "She is the leaf, and she is the gale."
-  },
-  {
-    "id": 30,
-    "gridStart": {
-      "col": 0,
-      "row": 0
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 3
-    },
-    "obstacles": [
-      {
-        "col": 1,
-        "row": 0
-      }
-    ],
-    "blockages": [],
-    "gaps": [],
-    "movables": [],
-    "switches": [],
-    "quote": "The final door awaits the breath of life.",
-    "collectibles": [
-      {
-        "col": 2,
-        "row": 0
-      }
-    ],
-    "doors": [],
-    "hardBlocks": [
-      {
-        "col": 2,
-        "row": 2,
-        "id": "hb1"
-      }
-    ],
-    "girlButtons": [
-      {
-        "col": 1,
-        "row": 3,
-        "targetId": "hb1"
-      }
-    ],
-    "bells": [
-      {
-        "col": 3,
-        "row": 0
-      },
-      {
-        "col": 0,
-        "row": 3
-      }
-    ]
-  },
-  {
-    "id": 31,
-    "gridStart": {
-      "col": 0,
-      "row": 1
-    },
-    "gridExit": {
-      "col": 3,
-      "row": 1
-    },
-    "obstacles": [
-      {
-        "col": 0,
-        "row": 0
-      },
-      {
-        "col": 2,
-        "row": 1
-      },
-      {
-        "col": 2,
-        "row": 2
-      },
-      {
-        "col": 2,
-        "row": 3
-      }
-    ],
-    "blockages": [
-      {
-        "col": 1,
-        "row": 1,
-        "type": "iron_regen"
-      },
-      {
-        "col": 1,
-        "row": 2,
-        "type": "iron_regen"
-      }
-    ],
-    "gaps": [],
-    "movables": [],
-    "switches": [],
-    "collectibles": [],
-    "doors": [],
-    "hardBlocks": [
-      {
-        "col": 3,
-        "row": 0,
-        "id": "hb1"
-      }
-    ],
-    "girlButtons": [
-      {
-        "col": 0,
-        "row": 3,
-        "targetId": "hb1"
-      }
-    ],
-    "bells": [],
-    "quote": "Beyond the horizon, the wind is free."
+    "quote": "She dances through the open air."
   }
 ];
