@@ -901,6 +901,8 @@
                 this.eyeOffset = { x: 0, y: 0 };
                 this.blinkTimer = 0;
                 this._expression = '';
+
+                this.lastEnvVersion = 0;
             }
 
             get expression() { return this._expression; }
@@ -1039,10 +1041,28 @@
                         const foundPlan = this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
 
                         if (foundPlan) {
-                            // We found something to do! Show !
-                            this.state = 'HESITATE';
-                            this.stateTimer = 0;
-                            this.expression = '!';
+                            // Check if environment actually changed to warrant an exclamation
+                            let envChanged = false;
+                            if (window.gameManager && window.gameManager.envVersion > this.lastEnvVersion) {
+                                envChanged = true;
+                                this.lastEnvVersion = window.gameManager.envVersion;
+                            }
+
+                            if (envChanged) {
+                                // We found a plan AND the environment changed (player did something)
+                                // Show '!' and act
+                                this.state = 'HESITATE';
+                                this.stateTimer = 0;
+                                this.expression = '!';
+                            } else {
+                                // Plan found, but environment is same. Just go do it without fanfare.
+                                // Or if we were STOPPED, maybe we should just go?
+                                // If we transition directly to WALKING, we skip HESITATE ('!')
+                                this.state = 'WALKING';
+                                this.pathQueue = [];
+                                // Keep expression as '...' or clear it?
+                                this.expression = '';
+                            }
                         } else {
                             // No new plan, just stuck or waiting
                             // Don't show '!', go back to STOPPED or stay THINKING for a bit
@@ -1757,6 +1777,9 @@
 
                             // Explosion effect
                             particles.spawn(blockage.x + blockage.width / 2, blockage.y + blockage.height / 2, 'dust', 10);
+
+                            if (window.gameManager) window.gameManager.envVersion++;
+
                             return true;
                         }
                     }
@@ -2116,6 +2139,7 @@
                     if (dot > 0.6) {
                         this.blocked = false;
                         particles.spawn(this.x + this.width / 2, this.y + this.height / 2, 'dust', 10);
+                        if (window.gameManager) window.gameManager.envVersion++;
                         return true;
                     }
                 }
@@ -2227,6 +2251,7 @@
                     const target = hardBlocks.find(hb => hb.id === this.targetId);
                     if (target) {
                         target.makeSwitchable();
+                        if (window.gameManager) window.gameManager.envVersion++;
                     }
                 }
             }
@@ -2808,6 +2833,7 @@
                 this.state = 'MENU'; // MENU, LEVEL_SELECT, PLAYING, TRANSITION
                 this.isMuted = false;
                 this.currentLevelId = 1;
+                this.envVersion = 0; // Track environment changes for AI expressions
 
                 // UI Elements
                 this.screens = {
