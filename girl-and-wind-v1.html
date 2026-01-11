@@ -357,6 +357,16 @@
         const GRID_OFFSET_X = (GAME_WIDTH - (GRID_W * CELL_SIZE)) / 2;
         const GRID_OFFSET_Y = (GAME_HEIGHT - (GRID_H * CELL_SIZE)) / 2;
 
+        // --- GLOBAL VISUALS ---
+        let shakeIntensity = 0;
+        let shakeX = 0;
+        let shakeY = 0;
+        let levelStartTime = 0;
+
+        function addShake(amount) {
+            shakeIntensity = Math.min(shakeIntensity + amount, 25);
+        }
+
         // Configuration
         const GIRL_SIZE = 40; // Smaller relative to cell (half size) for "small" feel
         const GIRL_SPEED = 150; // Adjusted for larger scale
@@ -1397,13 +1407,7 @@
                         obj.x + obj.width > this.x &&
                         obj.y < this.y + this.height &&
                         obj.y + obj.height > this.y) {
-                        // --- GLOBAL VISUALS ---
-                        let shakeIntensity = 0;
-                        let levelStartTime = 0;
 
-                        function addShake(amount) {
-                            shakeIntensity = Math.min(shakeIntensity + amount, 20);
-                        }
                         const overlapWidth = Math.min(obj.x + obj.width, this.x + this.width) - Math.max(obj.x, this.x);
                         const overlapHeight = Math.min(obj.y + obj.height, this.y + this.height) - Math.max(obj.y, this.y);
                         const overlapArea = overlapWidth * overlapHeight;
