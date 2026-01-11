@@ -70,19 +70,252 @@
         .debug {
             display: none;
         }
+
+        /* UI OVERLAYS */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* Let clicks pass to canvas by default */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+            /* Catch clicks */
+            opacity: 0;
+            transition: opacity 0.5s;
+            visibility: hidden;
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        h1 {
+            font-size: 64px;
+            font-weight: 200;
+            letter-spacing: 8px;
+            color: #fff;
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px 40px;
+            font-size: 18px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+            letter-spacing: 2px;
+            font-weight: 300;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        /* LEVEL GALLERY */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border-radius: 8px;
+        }
+
+        .level-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .level-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .level-btn.locked {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #000;
+        }
+
+        .level-btn .star-mark {
+            font-size: 14px;
+            color: #ffcc00;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .level-btn.collected .star-mark {
+            display: block;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+
+        .hud-top {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            right: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .hud-level-text {
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .hud-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .star-status {
+            color: #444;
+            font-size: 24px;
+            transition: color 0.5s;
+        }
+
+        .star-status.active {
+            color: #ffcc00;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+
+        /* Transition */
+        #transition-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .debug {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div class="level-indicator" id="levelIndicator">LEVEL 1</div>
-        <div class="controls">
+
+        <!-- UI LAYERS -->
+        <div class="ui-layer">
+
+            <!-- START SCREEN -->
+            <div id="start-screen" class="screen active">
+                <h1>Girl & Wind</h1>
+                <button class="btn" id="btn-start">Start Game</button>
+                <button class="btn" id="btn-levels">Levels</button>
+            </div>
+
+            <!-- LEVEL GALLERY -->
+            <div id="level-gallery" class="screen">
+                <h2>Select Level</h2>
+                <div class="grid-container" id="level-grid">
+                    <!-- Javascript will populate this -->
+                </div>
+                <button class="btn" id="btn-back-menu" style="margin-top: 30px;">Back</button>
+            </div>
+
+            <!-- HUD (In Game) -->
+            <div id="hud">
+                <div class="hud-top">
+                    <div class="hud-level-text" id="hud-level-display">Level 1</div>
+                    <div class="hud-controls">
+                        <div class="icon-btn" id="hud-star">★</div> <!-- Reactive star icon -->
+                        <div class="icon-btn" id="btn-mute">🔊</div>
+                        <div class="icon-btn" id="btn-reset">↻</div>
+                        <div class="icon-btn" id="btn-home">🏠</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRANSITION OVERLAY -->
+            <div id="transition-overlay"></div>
+
+        </div>
+
+        <div class="controls" style="opacity: 0.5;">
             <div><strong>Controls</strong></div>
             <div>MOUSE - Move Wind Source</div>
             <div>HOLD W/A/S/D - Blow Wind</div>
             <div>R - Restart Level</div>
-            <div>1/2 - Switch Level</div>
         </div>
     </div>
 
@@ -2245,7 +2478,211 @@
             }
         }
 
+        // ===============================
+        // CORE SYSTEM (Save & Manager)
+        // ===============================
+        class SaveSystem {
+            static save(levelId, collectedStars = 0) {
+                const data = this.load();
+                if (levelId > data.maxLevel) {
+                    data.maxLevel = levelId;
+                }
+                if (!data.stars[levelId]) data.stars[levelId] = 0;
+                if (collectedStars > data.stars[levelId]) {
+                    data.stars[levelId] = collectedStars;
+                }
+                localStorage.setItem('windy_save_v1', JSON.stringify(data));
+            }
+
+            static load() {
+                const raw = localStorage.getItem('windy_save_v1');
+                if (raw) return JSON.parse(raw);
+                return { maxLevel: 1, stars: {} };
+            }
+
+            static reset() {
+                localStorage.removeItem('windy_save_v1');
+                location.reload();
+            }
+        }
+
+        class GameManager {
+            constructor() {
+                this.state = 'MENU'; // MENU, LEVEL_SELECT, PLAYING, TRANSITION
+                this.isMuted = false;
+                this.currentLevelId = 1;
+
+                // UI Elements
+                this.screens = {
+                    start: document.getElementById('start-screen'),
+                    gallery: document.getElementById('level-gallery'),
+                    hud: document.getElementById('hud'),
+                    grid: document.getElementById('level-grid'),
+                    transition: document.getElementById('transition-overlay')
+                };
+
+                this.elements = {
+                    levelDisplay: document.getElementById('hud-level-display'),
+                    starIcon: document.getElementById('hud-star'),
+                    btnMute: document.getElementById('btn-mute'),
+                    btnReset: document.getElementById('btn-reset'),
+                    btnHome: document.getElementById('btn-home')
+                };
+
+                this._bindEvents();
+                this._initGallery();
+            }
+
+            init() {
+                this.switchState('MENU');
+                // Check mute state from previous session? (Optional)
+            }
+
+            _bindEvents() {
+                document.getElementById('btn-start').onclick = () => {
+                    const save = SaveSystem.load();
+                    this.startLevel(save.maxLevel > LEVELS.length ? LEVELS.length : save.maxLevel);
+                };
+
+                document.getElementById('btn-levels').onclick = () => {
+                    this._updateGallery();
+                    this.switchState('LEVEL_SELECT');
+                };
+
+                document.getElementById('btn-back-menu').onclick = () => this.switchState('MENU');
+
+                // HUD Controls
+                this.elements.btnReset.onclick = () => loadLevel(this.currentLevelId); // Reuse global loadLevel
+                this.elements.btnHome.onclick = () => this.switchState('MENU');
+                this.elements.btnMute.onclick = () => this.toggleMute();
+            }
+
+            _initGallery() {
+                this.screens.grid.innerHTML = '';
+                // Create placeholders for max 20 levels
+                for (let i = 1; i <= 20; i++) {
+                    const btn = document.createElement('div');
+                    btn.className = 'level-btn locked';
+                    btn.innerText = i;
+
+                    const starMark = document.createElement('div');
+                    starMark.className = 'star-mark';
+                    starMark.innerText = '★';
+                    btn.appendChild(starMark);
+
+                    btn.onclick = () => {
+                        if (btn.classList.contains('locked')) return;
+                        this.startLevel(i);
+                    };
+
+                    this.screens.grid.appendChild(btn);
+                }
+            }
+
+            _updateGallery() {
+                const save = SaveSystem.load();
+                const btns = this.screens.grid.children;
+                for (let i = 0; i < btns.length; i++) {
+                    const levelId = i + 1;
+                    const btn = btns[i];
+
+                    if (LEVELS.find(l => l.id === levelId)) {
+                        // Level exists
+                        if (levelId <= save.maxLevel) {
+                            btn.className = 'level-btn';
+                            if (save.stars[levelId]) btn.classList.add('collected');
+                            else btn.classList.remove('collected');
+                        } else {
+                            btn.className = 'level-btn locked';
+                            btn.classList.remove('collected');
+                        }
+                    } else {
+                        // Level doesn't exist yet
+                        btn.className = 'level-btn locked';
+                        btn.style.opacity = '0.1';
+                    }
+                }
+            }
+
+            startLevel(id) {
+                if (!LEVELS.find(l => l.id === id)) return;
+
+                this.currentLevelId = id;
+                // Transition
+                this.screens.transition.style.opacity = 1;
+
+                setTimeout(() => {
+                    loadLevel(id); // Global load
+                    this.switchState('PLAYING');
+                    this.screens.transition.style.opacity = 0;
+
+                    // Update HUD
+                    this.elements.levelDisplay.innerText = "LEVEL " + id;
+                    this.elements.starIcon.classList.remove('active');
+                }, 500);
+            }
+
+            completeLevel(starsCollected = 0) {
+                // Save
+                SaveSystem.save(this.currentLevelId + 1, starsCollected);
+
+                // Transition
+                this.state = 'TRANSITION';
+                this.screens.transition.style.opacity = 1;
+
+                setTimeout(() => {
+                    const nextId = this.currentLevelId + 1;
+                    if (LEVELS.find(l => l.id === nextId)) {
+                        this.startLevel(nextId);
+                    } else {
+                        // Finished all levels
+                        this.switchState('MENU');
+                        this.screens.transition.style.opacity = 0;
+                        alert("CONGRATULATIONS! You completed all levels!");
+                    }
+                }, 1000);
+            }
+
+            switchState(newState) {
+                this.state = newState;
+                // Hide all screens
+                Object.values(this.screens).forEach(s => {
+                    if (s && s.classList.contains('screen')) s.classList.remove('active');
+                });
+                this.screens.hud.style.display = 'none';
+
+                if (newState === 'MENU') {
+                    this.screens.start.classList.add('active');
+                    // Reset game entities so they don't interfere
+                    // girl = null; 
+                    // Actually, keep running background demo?
+                } else if (newState === 'LEVEL_SELECT') {
+                    this.screens.gallery.classList.add('active');
+                } else if (newState === 'PLAYING') {
+                    this.screens.hud.style.display = 'block';
+                }
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                this.elements.btnMute.innerText = this.isMuted ? '🔇' : '🔊';
+                if (audioSystem && audioSystem.masterGain) {
+                    audioSystem.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.5, audioSystem.ctx.currentTime);
+                }
+            }
+
+            updateHUD(starsCount) {
+                if (starsCount > 0) this.elements.starIcon.classList.add('active');
+                else this.elements.starIcon.classList.remove('active');
+            }
+        }
+
+        const gameManager = new GameManager();
+
         const editor = new LevelEditor();
+
+        // Init Game
+        gameManager.init();
 
         // Input Handling
 
@@ -2353,48 +2790,86 @@
             const dt = (now - lastTime) / 1000;
             lastTime = now;
 
-            // Updates
-            for (let obj of movables) obj.update(dt);
-            for (let blk of blockages) blk.update(dt); // 重要：更新 regen blockages
-            for (let door of doors) door.update(dt); // 更新门
-            for (let s of switches) {
-                s.update(dt);
-                // Link logic - now controls doors instead of blockages
-                if (s.active && s.targetId) {
-                    const door = doors.find(d => d.id === s.targetId);
-                    if (door && !door.opening) door.open();
-                }
-            }
-            for (let gap of gaps) gap.checkFilled(movables);
-            // 只把未锁定的木板当成障碍物（锁定的木板已变成桥）
-            // 把未打开的门也当成障碍物
-            const unlockedMovables = movables.filter(m => !m.isLocked);
-            const blockedDoors = doors.filter(d => d.blocked);
-            if (girl) girl.update(dt, obstacles.concat(unlockedMovables).concat(blockedDoors), blockages, gaps, switches, collectibles);
-
-            // Update collectibles
-            for (let col of collectibles) col.update(dt, girl);
-
-            if (wind.active) {
-                wind.pushMovables(movables);
-                wind.checkBlockages(blockages);
-                wind.checkSwitches(switches);
-            }
-
+            // Always update particles + audio for dynamic background in menu
             particles.update(dt);
+            wind.draw(ctx); // Just draw wind cursor logic if needed, but maybe hide?
+            // Actually wind needs update for drawing cursor
 
-            // Draw
-            // 1. Background
             ctx.fillStyle = THEME.bg;
             ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+            if (gameManager.state === 'MENU' || gameManager.state === 'LEVEL_SELECT') {
+                // Background animation only
+                particles.draw(ctx);
+
+                // Draw wind stream demo if mouse moves
+                // (Let standard draw calls handle it below if we skip game logic)
+                wind.draw(ctx);
+
+                // Vignette
+                const gradient = ctx.createRadialGradient(
+                    GAME_WIDTH / 2, GAME_HEIGHT / 2, 200,
+                    GAME_WIDTH / 2, GAME_HEIGHT / 2, 500
+                );
+                gradient.addColorStop(0, 'rgba(0,0,0,0)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0.6)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            if (gameManager.state === 'PLAYING' || gameManager.state === 'TRANSITION') {
+                // Updates
+                for (let obj of movables) obj.update(dt);
+                for (let blk of blockages) blk.update(dt);
+                for (let door of doors) door.update(dt);
+                for (let s of switches) {
+                    s.update(dt);
+                    if (s.active && s.targetId) {
+                        const door = doors.find(d => d.id === s.targetId);
+                        if (door && !door.opening) door.open();
+                    }
+                }
+                for (let gap of gaps) gap.checkFilled(movables);
+
+                const unlockedMovables = movables.filter(m => !m.isLocked);
+                const blockedDoors = doors.filter(d => d.blocked);
+                if (girl) girl.update(dt, obstacles.concat(unlockedMovables).concat(blockedDoors), blockages, gaps, switches, collectibles);
+
+                // Update collectibles
+                for (let col of collectibles) col.update(dt, girl);
+
+                if (wind.active) {
+                    wind.pushMovables(movables);
+                    wind.checkBlockages(blockages);
+                    wind.checkSwitches(switches);
+                }
+
+                // Check Win Condition (Girl reached goal)
+                if (girl && girl.state === 'REACHED_GOAL') {
+                    // Count stars
+                    const starsCollected = collectibles.filter(c => c.collected).length;
+                    // Only complete once
+                    if (gameManager.state !== 'TRANSITION') {
+                        gameManager.completeLevel(starsCollected);
+                    }
+                }
+
+                // Update HUD Stars
+                const currentStars = collectibles.filter(c => c.collected).length;
+                gameManager.updateHUD(currentStars);
+            }
+
+            // Draw Everything
             if (editor.active) {
                 editor.draw(ctx);
                 requestAnimationFrame(gameLoop);
                 return;
             }
 
-            // 2. Draw Grid (Subtle)
+            // Draw Grid
             ctx.save();
             ctx.translate(GRID_OFFSET_X, GRID_OFFSET_Y);
             for (let r = 0; r < GRID_H; r++) {
