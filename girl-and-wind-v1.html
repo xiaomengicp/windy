@@ -565,8 +565,11 @@
 
                 const t = this.ctx.currentTime;
                 // Gain Ramp
+                // Gain Ramp
                 if (active) {
-                    this.windGain.gain.setTargetAtTime(0.3 * intensity + 0.1, t, 0.1);
+                    // Boosted volume: 0.6 * intensity + 0.2 (was 0.3 + 0.1)
+                    this.windGain.gain.target = 0.6 * intensity + 0.2;
+                    this.windGain.gain.setTargetAtTime(0.6 * intensity + 0.2, t, 0.1);
                 } else {
                     this.windGain.gain.setTargetAtTime(0, t, 0.2);
                 }
