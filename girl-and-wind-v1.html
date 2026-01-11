@@ -321,6 +321,9 @@
 
     <div class="debug" id="debugInfo"></div>
 
+    <!-- External Data -->
+    <script src="levels.js"></script>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1961,7 +1964,7 @@
         }
 
         // --- LEVEL SYSTEM ---
-        let LEVELS = []; // Now loaded from JSON
+        let LEVELS = typeof LEVELS_DATA !== 'undefined' ? LEVELS_DATA : [];
 
         // 游戏状态
         let currentLevelIndex = 0; // 0-based index for LEVELS array
@@ -2293,25 +2296,11 @@
                 };
 
                 this._bindEvents();
-                // this._initGallery(); // moved to after fetch
+                this._initGallery();
             }
 
-            async init() {
-                // Show loading state?
-                try {
-                    const response = await fetch('levels.json');
-                    if (!response.ok) throw new Error("Failed to load levels.json");
-                    LEVELS = await response.json();
-                    console.log("Levels loaded:", LEVELS.length);
-
-                    // Init Gallery now that levels exist
-                    this._initGallery();
-
-                    this.switchState('MENU');
-                } catch (e) {
-                    console.error("Critical Error: Could not load levels.", e);
-                    alert("Error loading game data. Please run via a local server (e.g. Live Server).");
-                }
+            init() {
+                this.switchState('MENU');
             }
 
             _bindEvents() {
