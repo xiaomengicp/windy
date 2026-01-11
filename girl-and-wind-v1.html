@@ -1171,15 +1171,14 @@
             }
 
             planPath(obstacles, blockages, gaps) {
-                // PRIORITY: If close to goal, done - check FIRST before any pathQueue logic
-                if (Math.abs(this.x - this.goalX) < 15 && Math.abs(this.y - this.goalY) < 15) {
-                    this.state = 'REACHED_GOAL';
-                    this.pathQueue = []; // Clear any remaining waypoints
-                    return;
-                }
-
                 // If queue has items, continue consuming
                 if (this.pathQueue.length > 0) return;
+
+                // If close to goal, done
+                if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) {
+                    this.state = 'REACHED_GOAL';
+                    return;
+                }
 
                 // 尝试生成完整路径
                 const path = findGridPath(this.x, this.y, this.goalX, this.goalY, obstacles, blockages, gaps);
@@ -2419,7 +2418,6 @@
             hardBlocks = [];
             girlButtons = [];
             bells = [];
-            windFatigue = 0; // Reset wind fatigue
 
             // Setup obstacles
             if (levelData.obstacles) {
@@ -3135,6 +3133,7 @@
                     if (windFatigue < 0) windFatigue = 0;
                 }
 
+                // Check Win Condition (Girl reached goal)
                 // Check Win Condition (Girl reached goal)
                 if (girl && girl.state === 'REACHED_GOAL') {
                     if (!girl.dissolved) {
