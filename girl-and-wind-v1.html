@@ -2688,6 +2688,9 @@
                 // 9: Collectible, 10: Door
                 // 11: HardBlock, 12: GirlButton, 13: Bell (v1.1)
                 // 14: IronRegenBlock (v1.1)
+                // 9: Collectible, 10: Door
+                // 11: HardBlock, 12: GirlButton, 13: Bell (v1.1)
+                // 14: IronRegenBlock (v1.1)
                 this.selectedType = 1;
                 this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit", "Col", "Door", "HardBlock", "GirlBtn", "Bell", "IronRegen"];
 
@@ -2757,7 +2760,21 @@
                         if (val === 1) { ctx.fillStyle = '#888'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); }
                         if (val === 2) { ctx.fillStyle = '#f88'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); ctx.fillStyle = '#000'; ctx.fillText("BLK", x + 10, y + 20); }
                         if (val === 3) { ctx.fillStyle = '#f44'; ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10); ctx.fillStyle = '#000'; ctx.fillText("REG", x + 10, y + 20); }
-                        if (val === 4) { ctx.fillStyle = '#000'; ctx.fillRect(x + 10, y + 10, CELL_SIZE - 20, CELL_SIZE - 20); } // Gap
+                        if (val === 4) {
+                            // Gap - visually distinct hole
+                            ctx.fillStyle = '#1a202c';
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            // Cross pattern to distinguish from black background
+                            ctx.strokeStyle = '#2d3748';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(x, y); ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE);
+                            ctx.moveTo(x + CELL_SIZE, y); ctx.lineTo(x, y + CELL_SIZE);
+                            ctx.stroke();
+                            // Border
+                            ctx.strokeStyle = '#4a5568';
+                            ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                        }
                         if (val === 5) { ctx.fillStyle = '#44f'; ctx.fillRect(x + 15, y + 50, CELL_SIZE - 30, 20); } // Plank
                         if (val === 6) { ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 10, 0, Math.PI * 2); ctx.fill(); } // Switch
                         if (val === 9) { ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, 8, 0, Math.PI * 2); ctx.fill(); } // Collectible
