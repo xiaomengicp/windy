@@ -1975,6 +1975,72 @@
             }
         }
 
+        class IronRegenBlock extends RegeneratingBlockage {
+            constructor(x, y, width, height, revealsPath = null) {
+                super(x, y, width, height, revealsPath);
+                this.isIron = false;
+            }
+
+            update(dt) {
+                const wasBlocked = this.blocked;
+                super.update(dt);
+
+                // If we just regenerated (transitioned from open to blocked)
+                // Lock into Iron state
+                if (!wasBlocked && this.blocked) {
+                    this.isIron = true;
+                    // Visual effect for hardening?
+                    particles.spawn(this.x + this.width / 2, this.y + this.height / 2, '#555', 10);
+                }
+            }
+
+            checkWind(wind) {
+                if (this.isIron) return false;
+                return super.checkWind(wind);
+            }
+
+            draw(ctx) {
+                if (this.blocked && this.isIron) {
+                    // Iron State Display
+                    ctx.fillStyle = '#2d3748'; // Dark Iron
+                    // Draw geometric parts but dark and solid looking
+                    for (let p of this.parts) {
+                        ctx.fillStyle = '#1a202c';
+                        ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, p.h);
+
+                        // Metallic sheen
+                        ctx.fillStyle = '#4a5568';
+                        ctx.fillRect(this.x + p.ox, this.y + p.oy, p.w, 2);
+
+                        // Red Locked Indicator
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                        ctx.fillRect(this.x + p.ox + p.w / 2 - 2, this.y + p.oy + p.h / 2 - 2, 4, 4);
+                    }
+
+                    // Main border
+                    ctx.strokeStyle = '#e53e3e'; // Red lock border
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2);
+
+                } else {
+                    // Normal behavior (Regenerating or Open)
+                    super.draw(ctx);
+
+                    // Add a hint that this IS an Iron block (before regular regen)
+                    // Maybe a small grey icon or tint?
+                    if (this.blocked && !this.isIron) {
+                        ctx.save();
+                        ctx.fillStyle = '#aaa';
+                        ctx.globalAlpha = 0.5;
+                        ctx.beginPath();
+                        ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+            }
+        }
+
         // Door - Controlled by WindSwitch, slides open instead of shattering
         class Door {
             constructor(x, y, width, height, id = null) {
@@ -2510,6 +2576,8 @@
 
                     if (blk.type === 'regen') {
                         blockages.push(new RegeneratingBlockage(pos.x, pos.y, CELL_SIZE, CELL_SIZE, reveals));
+                    } else if (blk.type === 'iron_regen') {
+                        blockages.push(new IronRegenBlock(pos.x, pos.y, CELL_SIZE, CELL_SIZE, reveals));
                     } else {
                         const b = new Blockage(pos.x, pos.y, CELL_SIZE, CELL_SIZE, reveals);
                         if (blk.id) b.id = blk.id; // Assign ID for switches
@@ -2608,8 +2676,9 @@
                 // 4: Gap, 5: Plank, 6: Switch, 7: Start, 8: Exit
                 // 9: Collectible, 10: Door
                 // 11: HardBlock, 12: GirlButton, 13: Bell (v1.1)
+                // 14: IronRegenBlock (v1.1)
                 this.selectedType = 1;
-                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit", "Col", "Door", "HardBlock", "GirlBtn", "Bell"];
+                this.typeNames = ["Clear", "Obstacle", "Block(Static)", "Block(Regen)", "Gap", "Plank", "Switch", "Start", "Exit", "Col", "Door", "HardBlock", "GirlBtn", "Bell", "IronRegen"];
 
                 // v1.1: Linking system for GirlButton -> HardBlock
                 this.linkMode = false;
@@ -2720,7 +2789,7 @@
                 ctx.fillText(`Selected: [${this.selectedType}] ${this.typeNames[this.selectedType]}`, 20, 50);
                 ctx.fillText(`Keys: 0-Clear, 1-Obs, 2-Stat, 3-Reg, 4-Gap, 5-Plank`, 20, 70);
                 ctx.fillText(`      6-Sw, 7-Start, 8-Exit, 9-Col, D-Door`, 20, 90);
-                ctx.fillText(`      H-HardBlock, G-GirlBtn, B-Bell`, 20, 110);
+                ctx.fillText(`      H-HardBlock, G-GirlBtn, B-Bell, I-IronRegen`, 20, 110);
                 ctx.fillText(`[P] Print Config   [L] Link Mode ${this.linkMode ? 'ON' : 'OFF'}`, 20, 130);
             }
 
@@ -2757,6 +2826,7 @@
                             config.blockages.push({ col: c, row: r, type: 'static', id: blockCount });
                         }
                         if (val === 3) config.blockages.push({ col: c, row: r, type: 'regen' });
+                        if (val === 14) config.blockages.push({ col: c, row: r, type: 'iron_regen' });
                         if (val === 4) config.gaps.push({ col: c, row: r });
                         if (val === 5) config.movables.push({ col: c, row: r, type: 'plank' });
                         if (val === 6) {
