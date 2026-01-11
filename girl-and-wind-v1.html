@@ -1397,7 +1397,13 @@
                         obj.x + obj.width > this.x &&
                         obj.y < this.y + this.height &&
                         obj.y + obj.height > this.y) {
+                        // --- GLOBAL VISUALS ---
+                        let shakeIntensity = 0;
+                        let levelStartTime = 0;
 
+                        function addShake(amount) {
+                            shakeIntensity = Math.min(shakeIntensity + amount, 20);
+                        }
                         const overlapWidth = Math.min(obj.x + obj.width, this.x + this.width) - Math.max(obj.x, this.x);
                         const overlapHeight = Math.min(obj.y + obj.height, this.y + this.height) - Math.max(obj.y, this.y);
                         const overlapArea = overlapWidth * overlapHeight;
@@ -1417,7 +1423,9 @@
                                 obj.vy = 0;
                             }
                             this.filledBy = obj; // 记录是哪个木板填的
-                            audioSystem.playImpact();
+                            audioSystem.playImpact('heavy');
+                            addShake(15); // Screen Shake Trigger
+                            // Particles?
                             return;
                         }
                     }
@@ -1997,9 +2005,12 @@
             if (!levelData) return;
 
             currentLevel = levelId;
-            // levelIndicator.innerText = "LEVEL " + levelId; // Removed as element no longer exists
+            levelStartTime = Date.now(); // Record start time for animation
 
             obstacles = [];
+            // ... (rest of loadLevel is same, but I need to be careful not to delete it)
+            // Wait, replace_file_content replaces the block. I should only target the top part of loadLevel.
+
             blockages = [];
             gaps = [];
             movables = [];
@@ -2617,12 +2628,23 @@
                 }
 
                 // Check Win Condition (Girl reached goal)
+                // Check Win Condition (Girl reached goal)
                 if (girl && girl.state === 'REACHED_GOAL') {
-                    // Count stars
-                    const starsCollected = collectibles.filter(c => c.collected).length;
-                    // Only complete once
-                    if (gameManager.state !== 'TRANSITION') {
-                        gameManager.completeLevel(starsCollected);
+                    if (!girl.dissolved) {
+                        girl.dissolved = true;
+                        // Spawn particles
+                        for (let i = 0; i < 30; i++) {
+                            particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fff');
+                            particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fc0');
+                        }
+
+                        // Delay completion
+                        setTimeout(() => {
+                            const starsCollected = collectibles.filter(c => c.collected).length;
+                            if (gameManager.state !== 'TRANSITION') {
+                                gameManager.completeLevel(starsCollected);
+                            }
+                        }, 1000);
                     }
                 }
 
@@ -2638,18 +2660,62 @@
                 return;
             }
 
+
+            // Update Shake
+            if (shakeIntensity > 0) {
+                shakeIntensity -= dt * 60;
+                if (shakeIntensity < 0) shakeIntensity = 0;
+            }
+
             // Draw Grid
             ctx.save();
+
+            // Apply Shake to World
+            if (shakeIntensity > 0) {
+                const rx = (Math.random() - 0.5) * shakeIntensity;
+                const ry = (Math.random() - 0.5) * shakeIntensity;
+                ctx.translate(rx, ry);
+            }
+
             ctx.translate(GRID_OFFSET_X, GRID_OFFSET_Y);
+
+            // Pop-up Animation
+            const timeSinceLoad = (Date.now() - levelStartTime) / 1000;
+
             for (let r = 0; r < GRID_H; r++) {
                 for (let c = 0; c < GRID_W; c++) {
-                    ctx.fillStyle = THEME.grid;
-                    ctx.fillRect(c * CELL_SIZE + 1, r * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+                    let scale = 1;
+                    // Animation logic
+                    if (timeSinceLoad < 2.0 && levelStartTime > 0) {
+                        const delay = (c + r) * 0.05;
+                        const t = Math.max(0, Math.min((timeSinceLoad - delay) * 4, 1));
+                        // Ease Out Back
+                        const c1 = 1.70158;
+                        const c3 = c1 + 1;
+                        scale = 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+                        if (t <= 0) scale = 0;
+                        if (t >= 1) scale = 1;
+                    }
+
+                    if (scale > 0.01) {
+                        ctx.save();
+                        const cx = c * CELL_SIZE + CELL_SIZE / 2;
+                        const cy = r * CELL_SIZE + CELL_SIZE / 2;
+                        ctx.translate(cx, cy);
+                        ctx.scale(scale, scale);
+
+                        ctx.fillStyle = THEME.grid;
+                        ctx.fillRect(-CELL_SIZE / 2 + 1, -CELL_SIZE / 2 + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+                        ctx.restore();
+                    }
                 }
             }
+
             ctx.restore();
 
             // 3. Draw Entities
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
 
             // Exit Marker (New) - Use FINAL GOAL
             if (girl) {
@@ -2697,9 +2763,10 @@
             for (let sw of switches) sw.draw(ctx);
             for (let col of collectibles) col.draw(ctx);
 
-            if (girl) girl.draw(ctx);
+            if (girl && !girl.dissolved) girl.draw(ctx);
             wind.draw(ctx);
             particles.draw(ctx);
+            ctx.restore();
 
             // 6. Lighting / Vignette Overlay
             const gradient = ctx.createRadialGradient(
