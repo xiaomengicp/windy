@@ -44,7 +44,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "A clear path is a rare gift."
+    "quote": "The wind begins its journey here."
   },
   {
     "id": 2,
@@ -86,7 +86,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "She dances through the open air."
+    "quote": "A gentle breeze can move the world."
   },
   {
     "id": 3,
@@ -135,7 +135,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Light and shadow guide her steps."
+    "quote": "Whispers guide her through the dark."
   },
   {
     "id": 4,
@@ -183,7 +183,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Do not look down, look forward."
+    "quote": "Paths open where the air flows free."
   },
   {
     "id": 5,
@@ -244,7 +244,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Faith carries her across the abyss."
+    "quote": "Strength is not force, but persistence."
   },
   {
     "id": 6,
@@ -301,7 +301,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Do not look down, look forward."
+    "quote": "The stone remembers the touch of air."
   },
   {
     "id": 7,
@@ -350,7 +350,7 @@ const LEVELS_DATA = [
       }
     ],
     "switches": [],
-    "quote": "Do not look down, look forward."
+    "quote": "What is broken can be made whole."
   },
   {
     "id": 8,
@@ -393,7 +393,7 @@ const LEVELS_DATA = [
     "movables": [],
     "gaps": [],
     "switches": [],
-    "quote": "The world breathes, closing wounds in the stone."
+    "quote": "She dances with the unseen spirits."
   },
   {
     "id": 9,
@@ -447,7 +447,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Faith carries her across the abyss."
+    "quote": "Gravity is but a law to be bent."
   },
   {
     "id": 10,
@@ -484,7 +484,7 @@ const LEVELS_DATA = [
       }
     ],
     "switches": [],
-    "quote": "Do not look down, look forward."
+    "quote": "In silence, the wind speaks loudest."
   },
   {
     "id": 11,
@@ -520,7 +520,7 @@ const LEVELS_DATA = [
       }
     ],
     "switches": [],
-    "quote": "The void is but a step in the journey."
+    "quote": "The maze is only a challenge of mind."
   },
   {
     "id": 12,
@@ -579,7 +579,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "A momentary path is all she needs."
+    "quote": "Boundaries fade into the horizon."
   },
   {
     "id": 13,
@@ -637,7 +637,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "A momentary path is all she needs."
+    "quote": "Time heals the wounds of the earth."
   },
   {
     "id": 14,
@@ -703,7 +703,7 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "Obstacles are merely redirection."
+    "quote": "Iron yields to the patient breath."
   },
   {
     "id": 15,
@@ -746,7 +746,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "A clear path is a rare gift."
+    "quote": "Shadows flee before the gale."
   },
   {
     "id": 16,
@@ -805,7 +805,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "A momentary path is all she needs."
+    "quote": "Every gap is a leap of faith."
   },
   {
     "id": 17,
@@ -866,7 +866,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "She dances through the open air."
+    "quote": "The storm's heart is calm and still."
   },
   {
     "id": 18,
@@ -928,7 +928,7 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "The iron heart waits for a second breath."
+    "quote": "Echoes of the past lead the way."
   },
   {
     "id": 19,
@@ -978,7 +978,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The iron heart waits for a second breath."
+    "quote": "To fly is to let go of the ground."
   },
   {
     "id": 20,
@@ -1024,7 +1024,7 @@ const LEVELS_DATA = [
         "row": 2
       }
     ],
-    "quote": "Faith carries her across the abyss."
+    "quote": "Barriers dissolve in the wind's embrace."
   },
   {
     "id": 21,
@@ -1085,7 +1085,7 @@ const LEVELS_DATA = [
         "row": 3
       }
     ],
-    "quote": "She dances through the open air."
+    "quote": "The final door opens to the sky."
   },
   {
     "id": 22,
@@ -1142,7 +1142,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "Faith carries her across the abyss."
+    "quote": "She has become the wind itself."
   },
   {
     "id": 23,
@@ -1249,6 +1249,6 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "She dances through the open air."
+    "quote": "Freedom is the destination."
   }
 ];
