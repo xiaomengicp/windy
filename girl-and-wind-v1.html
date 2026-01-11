@@ -720,7 +720,7 @@
         }
 
         // 检查某个格子是否可通行
-        function isGridCellWalkable(col, row, obstacles, blockages, gaps, ignoreEntities = []) {
+        function isGridCellWalkable(col, row, obstacles, blockages, gaps, hardBlocks, ignoreEntities = []) {
             if (col < 0 || col >= GRID_W || row < 0 || row >= GRID_H) return false;
 
             const cellX = GRID_OFFSET_X + col * CELL_SIZE;
@@ -762,12 +762,25 @@
                 }
             }
 
+            // 检查 hardBlocks (不可穿过)
+            if (hardBlocks) {
+                for (let hb of hardBlocks) {
+                    if (ignoreEntities.includes(hb)) continue;
+                    if (cellX < hb.x + hb.width &&
+                        cellX + CELL_SIZE > hb.x &&
+                        cellY < hb.y + hb.height &&
+                        cellY + CELL_SIZE > hb.y) {
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
 
         // BFS 找最短路径，返回像素坐标数组（waypoints）
         // 如果终点不可达，返回到最接近终点的可达格子的路径
-        function findGridPath(startX, startY, endX, endY, obstacles, blockages, gaps, ignoreEntities = []) {
+        function findGridPath(startX, startY, endX, endY, obstacles, blockages, gaps, hardBlocks, ignoreEntities = []) {
             const start = pixelToGrid(startX, startY);
             const end = pixelToGrid(endX, endY);
 
@@ -951,7 +964,7 @@
                 }
             }
 
-            update(dt, obstacles, blockages, gaps, switches, collectibles) {
+            update(dt, obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons) {
                 // Update animation state
                 // 不晃动，走直线
                 // this.bobOffset = Math.sin(Date.now() / 150) * 2;
@@ -964,7 +977,7 @@
                         // Check collision with Blockages specifically to trigger "BLOCKED" state
                         // Note: updateWalking handles physics stop.
                         // If updateWalking returns true, it means we hit something.
-                        if (this.updateWalking(dt, obstacles, blockages, gaps, switches, collectibles)) {
+                        if (this.updateWalking(dt, obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons)) {
                             this.state = 'BLOCKED';
                             this.stateTimer = 0;
                             this.expression = '!';
@@ -1014,7 +1027,7 @@
                         this.expression = '...';
 
                         // 每次思考后都重新检查环境并尝试走
-                        this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles);
+                        this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
                         // 总是进入 HESITATE 状态，然后重新尝试走
                         this.state = 'HESITATE';
                         this.stateTimer = 0;
@@ -1047,11 +1060,11 @@
 
                 // Always try to plan path if walking
                 if (this.state === 'WALKING') {
-                    this.planPath(obstacles, blockages, gaps);
+                    this.planPath(obstacles, blockages, gaps, hardBlocks);
                 }
             }
 
-            checkEnvironment(obstacles, blockages, gaps, switches, collectibles) {
+            checkEnvironment(obstacles, blockages, gaps, switches, collectibles, hardBlocks) {
                 // 简化版：直接检查是否能到达终点，BFS 会自动找路
 
                 // PRIORITY 0: COLLECTIBLES
@@ -1062,7 +1075,7 @@
 
                     for (let col of collectibles) {
                         if (!col.collected) {
-                            if (this.canReachGoal(col.x, col.y, obstacles, blockages, gaps)) {
+                            if (this.canReachGoal(col.x, col.y, obstacles, blockages, gaps, hardBlocks)) {
                                 const dx = col.x - this.x;
                                 const dy = col.y - this.y;
                                 const d = dx * dx + dy * dy;
@@ -1088,25 +1101,19 @@
                     }
                 }
 
-                // PRIORITY 1: Can I reach the FINAL GOAL?
-                if (this.canReachGoal(this.finalGoalX, this.finalGoalY, obstacles, blockages, gaps)) {
-                    // 终点可达！重置卡住标记
+                // If no collectibles or unreachable, check if we can reach Final Goal (Exit)
+                if (this.canReachGoal(this.finalGoalX, this.finalGoalY, obstacles, blockages, gaps, hardBlocks)) {
+                    // Reset to exit
+                    this.goalX = this.finalGoalX;
+                    this.goalY = this.finalGoalY;
                     this.stuckAtClosest = false;
-                    if (this.currentGoalX !== this.finalGoalX || this.currentGoalY !== this.finalGoalY) {
-                        this.currentGoalX = this.finalGoalX;
-                        this.currentGoalY = this.finalGoalY;
-                        this.goalX = this.finalGoalX;
-                        this.goalY = this.finalGoalY;
-                        this.pathQueue = [];
-                        return true;
-                    }
                     return true;
                 }
 
-                // PRIORITY 2: SWITCHES - 如果有 switch 且终点不可达，去找 switch
+                // PRIORITY 2: SWITCHES (Unlock Blockages)
                 if (switches && switches.length > 0) {
                     const keySwitch = switches.find(s => !s.active);
-                    if (keySwitch && this.canReachGoal(keySwitch.x, keySwitch.y, obstacles, blockages, gaps)) {
+                    if (keySwitch && this.canReachGoal(keySwitch.x, keySwitch.y, obstacles, blockages, gaps, hardBlocks)) {
                         this.stuckAtClosest = false; // 重置标记
                         if (this.currentGoalX !== keySwitch.x || this.currentGoalY !== keySwitch.y) {
                             this.currentGoalX = keySwitch.x;
@@ -1117,6 +1124,24 @@
                             return true;
                         }
                         return true;
+                    }
+                }
+
+                // PRIORITY 2.5: GIRL BUTTONS (Unlock HardBlocks)
+                if (girlButtons && girlButtons.length > 0) {
+                    for (let gb of girlButtons) {
+                        if (!gb.pressed && this.canReachGoal(gb.x, gb.y, obstacles, blockages, gaps, hardBlocks)) {
+                            this.stuckAtClosest = false;
+                            if (this.currentGoalX !== gb.x || this.currentGoalY !== gb.y) {
+                                this.currentGoalX = gb.x;
+                                this.currentGoalY = gb.y;
+                                this.goalX = gb.x;
+                                this.goalY = gb.y;
+                                this.pathQueue = [];
+                                return true;
+                            }
+                            return true;
+                        }
                     }
                 }
 
@@ -1159,7 +1184,7 @@
                         const key = `${newCol},${newRow}`;
 
                         if (visited.has(key)) continue;
-                        if (!isGridCellWalkable(newCol, newRow, obstacles, blockages, gaps, ignoreEntities)) continue;
+                        if (!isGridCellWalkable(newCol, newRow, obstacles, blockages, gaps, hardBlocks, ignoreEntities)) continue;
 
                         if (newCol === end.col && newRow === end.row) return true;
 
@@ -1170,7 +1195,7 @@
                 return false;
             }
 
-            planPath(obstacles, blockages, gaps) {
+            planPath(obstacles, blockages, gaps, hardBlocks) {
                 // If queue has items, continue consuming
                 if (this.pathQueue.length > 0) return;
 
@@ -1181,7 +1206,7 @@
                 }
 
                 // 尝试生成完整路径
-                const path = findGridPath(this.x, this.y, this.goalX, this.goalY, obstacles, blockages, gaps);
+                const path = findGridPath(this.x, this.y, this.goalX, this.goalY, obstacles, blockages, gaps, hardBlocks);
 
                 if (path.length > 0) {
                     this.pathQueue = path;
@@ -1195,9 +1220,9 @@
                 }
             }
 
-            generatePath(tx, ty, obstacles, blockages, gaps) {
+            generatePath(tx, ty, obstacles, blockages, gaps, hardBlocks) {
                 // 使用 BFS 自动找最短路径
-                this.pathQueue = findGridPath(this.x, this.y, tx, ty, obstacles, blockages, gaps);
+                this.pathQueue = findGridPath(this.x, this.y, tx, ty, obstacles, blockages, gaps, hardBlocks);
             }
 
             checkCollisionLine(x1, y1, x2, y2, obstacles, blockages, gaps, ignoreEntities = []) {
@@ -1226,7 +1251,7 @@
                 return false;
             }
 
-            updateWalking(dt, obstacles, blockages, gaps, switches, collectibles) {
+            updateWalking(dt, obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons) {
                 if (this.pathQueue.length === 0) return;
 
                 const target = this.pathQueue[0];
@@ -1243,7 +1268,7 @@
                     // 路径走完了，让状态机在下一帧处理
                     // 不要在这里直接生成新路径，避免来回晃
                     if (this.pathQueue.length === 0) {
-                        if (this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles)) {
+                        if (this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles, hardBlocks, girlButtons)) {
                             this.state = 'THINKING'; // Found path or switch
                         } else {
                             this.state = 'THINKING'; // No obvious path, just think
@@ -3105,7 +3130,7 @@
                 if (girl) {
                     girl.update(dt,
                         obstacles.concat(unlockedMovables).concat(blockedDoors).concat(blockedHardBlocks),
-                        blockages, gaps, switches, collectibles);
+                        blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
 
                     // Check girl buttons (v1.1)
                     for (let gb of girlButtons) gb.checkGirl(girl);
