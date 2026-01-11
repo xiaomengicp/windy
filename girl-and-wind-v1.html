@@ -2418,6 +2418,7 @@
             hardBlocks = [];
             girlButtons = [];
             bells = [];
+            windFatigue = 0; // Reset wind fatigue
 
             // Setup obstacles
             if (levelData.obstacles) {
@@ -3134,7 +3135,18 @@
                 }
 
                 // Check Win Condition (Girl reached goal)
-                // Check Win Condition (Girl reached goal)
+                // Force check: if girl is close to exit, trigger win immediately
+                if (girl && girl.state !== 'REACHED_GOAL') {
+                    const distToGoal = Math.sqrt(
+                        Math.pow(girl.x - girl.goalX, 2) +
+                        Math.pow(girl.y - girl.goalY, 2)
+                    );
+                    if (distToGoal < 15) {
+                        girl.state = 'REACHED_GOAL';
+                        girl.pathQueue = []; // Clear any remaining waypoints
+                    }
+                }
+
                 if (girl && girl.state === 'REACHED_GOAL') {
                     if (!girl.dissolved) {
                         girl.dissolved = true;
