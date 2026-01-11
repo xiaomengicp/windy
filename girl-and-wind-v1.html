@@ -1171,14 +1171,15 @@
             }
 
             planPath(obstacles, blockages, gaps) {
-                // If queue has items, continue consuming
-                if (this.pathQueue.length > 0) return;
-
-                // If close to goal, done
-                if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) {
+                // PRIORITY: If close to goal, done - check FIRST before any pathQueue logic
+                if (Math.abs(this.x - this.goalX) < 15 && Math.abs(this.y - this.goalY) < 15) {
                     this.state = 'REACHED_GOAL';
+                    this.pathQueue = []; // Clear any remaining waypoints
                     return;
                 }
+
+                // If queue has items, continue consuming
+                if (this.pathQueue.length > 0) return;
 
                 // 尝试生成完整路径
                 const path = findGridPath(this.x, this.y, this.goalX, this.goalY, obstacles, blockages, gaps);
@@ -3135,18 +3136,6 @@
                 }
 
                 // Check Win Condition (Girl reached goal)
-                // Force check: if girl is close to exit, trigger win immediately
-                if (girl && girl.state !== 'REACHED_GOAL') {
-                    const distToGoal = Math.sqrt(
-                        Math.pow(girl.x - girl.goalX, 2) +
-                        Math.pow(girl.y - girl.goalY, 2)
-                    );
-                    if (distToGoal < 15) {
-                        girl.state = 'REACHED_GOAL';
-                        girl.pathQueue = []; // Clear any remaining waypoints
-                    }
-                }
-
                 if (girl && girl.state === 'REACHED_GOAL') {
                     if (!girl.dissolved) {
                         girl.dissolved = true;
