@@ -306,6 +306,51 @@
                 </div>
             </div>
 
+            <!-- PAUSE SCREEN -->
+            <div id="pause-screen" class="screen">
+                <h2>PAUSED</h2>
+                <div class="menu-options">
+                    <button class="btn" id="btn-resume-pause">Resume</button>
+                    <button class="btn" id="btn-restart-pause">Restart</button>
+                    <button class="btn" id="btn-menu-pause">Levels</button>
+                </div>
+            </div>
+
+            <!-- FAIL SCREEN -->
+            <div id="fail-screen" class="screen">
+                <h2 style="color: #ff4444;">Try Again</h2>
+                <div style="font-size: 14px; margin-bottom: 30px; opacity: 0.8;">The wind needs another path.</div>
+                <div class="menu-options" style="flex-direction: row; gap: 20px;">
+                    <button class="btn" id="btn-menu-fail">Levels</button>
+                    <button class="btn btn-primary" id="btn-retry-fail">Retry</button>
+                </div>
+            </div>
+
+            <!-- WIN SCREEN -->
+            <div id="win-screen" class="screen">
+                <h2>Level Complete</h2>
+                <div id="win-quote"
+                    style="margin: 20px 0; font-style: italic; opacity: 0.8; font-size: 1.2rem; max-width: 600px; text-align: center;">
+                </div>
+                <div class="menu-options" style="flex-direction: row; gap: 20px;">
+                    <button class="btn" id="btn-menu-win">Levels</button>
+                    <button class="btn" id="btn-replay">Replay</button>
+                    <button class="btn btn-primary" id="btn-next-level">Next Level</button>
+                </div>
+            </div>
+
+            <!-- END SCREEN -->
+            <div id="end-screen" class="screen">
+                <h1 style="font-size: 3rem; margin-bottom: 30px;">She made it.</h1>
+                <p style="font-size: 1.5rem; opacity: 0.9; margin-bottom: 10px;">You stayed in the wind.</p>
+                <p style="font-size: 1.2rem; opacity: 0.7; margin-bottom: 50px;">Thank you for playing.</p>
+
+                <div class="menu-options" style="flex-direction: row; gap: 20px;">
+                    <button class="btn" id="btn-credits">Credits</button>
+                    <button class="btn btn-primary" id="btn-restart-end">Main Menu</button>
+                </div>
+            </div>
+
             <!-- TRANSITION OVERLAY -->
             <div id="transition-overlay"></div>
 
@@ -791,11 +836,14 @@
             if (hardBlocks) {
                 for (let hb of hardBlocks) {
                     if (ignoreEntities.includes(hb)) continue;
-                    if (cellX < hb.x + hb.width &&
-                        cellX + CELL_SIZE > hb.x &&
-                        cellY < hb.y + hb.height &&
-                        cellY + CELL_SIZE > hb.y) {
-                        return false;
+                    // FIX: Check if blocked. If not blocked (blown away), it's walkable.
+                    if (hb.blocked) {
+                        if (cellX < hb.x + hb.width &&
+                            cellX + CELL_SIZE > hb.x &&
+                            cellY < hb.y + hb.height &&
+                            cellY + CELL_SIZE > hb.y) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -4448,7 +4496,7 @@
 
         class GameManager {
             constructor() {
-                this.state = 'MENU'; // MENU, LEVEL_SELECT, PLAYING, TRANSITION
+                this.state = 'MENU'; // MENU, LEVEL_SELECT, PLAYING, TRANSITION, PAUSED, FAIL, WIN_MENU, END
                 this.isMuted = false;
                 this.currentLevelId = 1;
                 this.envVersion = 0; // Track environment changes for AI expressions
@@ -4459,7 +4507,11 @@
                     gallery: document.getElementById('level-gallery'),
                     hud: document.getElementById('hud'),
                     grid: document.getElementById('level-grid'),
-                    transition: document.getElementById('transition-overlay')
+                    transition: document.getElementById('transition-overlay'),
+                    pause: document.getElementById('pause-screen'),
+                    fail: document.getElementById('fail-screen'),
+                    win: document.getElementById('win-screen'),
+                    end: document.getElementById('end-screen')
                 };
 
                 this.elements = {
@@ -4492,23 +4544,45 @@
                 document.getElementById('btn-back-menu').onclick = () => this.switchState('MENU');
 
                 // HUD Controls
-                this.elements.btnReset.onclick = () => loadLevel(this.currentLevelId); // Reuse global loadLevel
-                this.elements.btnHome.onclick = () => this.switchState('MENU');
+                this.elements.btnReset.onclick = () => this.startLevel(this.currentLevelId);
+                this.elements.btnHome.onclick = () => {
+                    this.switchState('PAUSED'); // Pause instead of immediate exit
+                };
                 this.elements.btnMute.onclick = () => this.toggleMute();
+
+                // --- NEW UI LISTENERS ---
+
+                // Pause Menu
+                document.getElementById('btn-resume-pause').onclick = () => this.switchState('PLAYING');
+                document.getElementById('btn-restart-pause').onclick = () => this.startLevel(this.currentLevelId);
+                document.getElementById('btn-menu-pause').onclick = () => this.switchState('LEVEL_SELECT');
+
+                // Fail Menu
+                document.getElementById('btn-retry-fail').onclick = () => this.startLevel(this.currentLevelId);
+                document.getElementById('btn-menu-fail').onclick = () => this.switchState('LEVEL_SELECT');
+
+                // Win Menu
+                document.getElementById('btn-replay').onclick = () => this.startLevel(this.currentLevelId);
+                document.getElementById('btn-menu-win').onclick = () => this.switchState('LEVEL_SELECT');
+
+                // End Screen
+                document.getElementById('btn-credits').onclick = () => {
+                    alert("Design & Code by [Your Name] \nCreated in 2026");
+                };
+                document.getElementById('btn-restart-end').onclick = () => {
+                    this.switchState('MENU');
+                };
             }
 
             _initGallery() {
                 this.screens.grid.innerHTML = '';
-                // Create placeholders for max 20 levels
-                for (let i = 1; i <= 20; i++) {
+                // Dynamic Gallery
+                for (let i = 1; i <= LEVELS.length; i++) {
                     const btn = document.createElement('div');
                     btn.className = 'level-btn locked';
                     btn.innerText = i;
 
-                    const starMark = document.createElement('div');
-                    starMark.className = 'star-mark';
-                    starMark.innerText = '★';
-                    btn.appendChild(starMark);
+                    // No stars needed
 
                     btn.onclick = () => {
                         if (btn.classList.contains('locked')) return;
@@ -4522,25 +4596,25 @@
             _updateGallery() {
                 const save = SaveSystem.load();
                 const btns = this.screens.grid.children;
+
+                // Ensure placeholders exist if levels changed length dynamically (optional safety)
+                if (btns.length !== LEVELS.length) {
+                    this._initGallery();
+                }
+
                 for (let i = 0; i < btns.length; i++) {
                     const levelId = i + 1;
                     const btn = btns[i];
 
-                    if (LEVELS.find(l => l.id === levelId)) {
-                        // Level exists
-                        if (levelId <= save.maxLevel) {
-                            btn.className = 'level-btn';
-                            if (save.stars[levelId]) btn.classList.add('collected');
-                            else btn.classList.remove('collected');
-                        } else {
-                            btn.className = 'level-btn locked';
-                            btn.classList.remove('collected');
-                        }
+                    if (levelId <= save.maxLevel) {
+                        btn.className = 'level-btn';
+                        // Re-binding onclick is repetitive but safe here if recreating
+                        btn.onclick = () => this.startLevel(levelId);
+                        btn.classList.remove('collected');
                     } else {
-                        // Level doesn't exist yet
                         btn.className = 'level-btn locked';
-                        btn.style.opacity = '0.1';
                     }
+                    btn.style.display = 'flex';
                 }
             }
 
@@ -4570,21 +4644,26 @@
                 // Save
                 SaveSystem.save(this.currentLevelId + 1, starsCollected);
 
-                // Transition
-                this.state = 'TRANSITION';
-                this.screens.transition.style.opacity = 1;
+                // Check if there are more levels
+                const nextId = this.currentLevelId + 1;
 
-                setTimeout(() => {
-                    const nextId = this.currentLevelId + 1;
-                    if (LEVELS.find(l => l.id === nextId)) {
-                        this.startLevel(nextId);
-                    } else {
-                        // Finished all levels
-                        this.switchState('MENU');
-                        this.screens.transition.style.opacity = 0;
-                        alert("CONGRATULATIONS! You completed all levels!");
-                    }
-                }, 1000);
+                if (nextId > LEVELS.length) {
+                    // All levels done -> End Screen
+                    this.switchState('END');
+                } else {
+                    // Show Win Screen (Narrative)
+                    const lvlData = LEVELS.find(l => l.id === this.currentLevelId);
+                    const quote = lvlData && lvlData.quote ? lvlData.quote : "The wind guides you.";
+
+                    const quoteEl = document.getElementById('win-quote');
+                    if (quoteEl) quoteEl.innerText = quote;
+
+                    const btnNext = document.getElementById('btn-next-level');
+                    btnNext.innerText = "Next Level";
+                    btnNext.onclick = () => this.startLevel(nextId);
+
+                    this.switchState('WIN_MENU');
+                }
             }
 
             switchState(newState) {
@@ -4597,14 +4676,23 @@
 
                 if (newState === 'MENU') {
                     this.screens.start.classList.add('active');
-                    // Reset game entities so they don't interfere
-                    // girl = null; 
-                    // Actually, keep running background demo?
                 } else if (newState === 'LEVEL_SELECT') {
                     this.screens.gallery.classList.add('active');
                 } else if (newState === 'PLAYING') {
                     this.screens.hud.style.display = 'block';
+                } else if (newState === 'PAUSED') {
+                    this.screens.pause.classList.add('active');
+                } else if (newState === 'FAIL') {
+                    this.screens.fail.classList.add('active');
+                } else if (newState === 'WIN_MENU') {
+                    this.screens.win.classList.add('active');
+                } else if (newState === 'END') {
+                    this.screens.end.classList.add('active');
                 }
+            }
+
+            failLevel() {
+                this.switchState('FAIL');
             }
 
             toggleMute() {
@@ -4773,10 +4861,6 @@
                 // Background animation only
                 particles.draw(ctx);
 
-                // Draw wind stream demo if mouse moves
-                // (Let standard draw calls handle it below if we skip game logic)
-                wind.draw(ctx);
-
                 // Vignette
                 const gradient = ctx.createRadialGradient(
                     GAME_WIDTH / 2, GAME_HEIGHT / 2, 200,
@@ -4791,90 +4875,81 @@
                 return;
             }
 
-            if (gameManager.state === 'PLAYING' || gameManager.state === 'TRANSITION') {
-                // Updates
-                for (let obj of movables) obj.update(dt);
-                for (let blk of blockages) blk.update(dt);
-                for (let door of doors) door.update(dt);
-                for (let bell of bells) bell.update(dt); // v1.1
+            // Pause Logic (Stop Updates)
+            if (gameManager.state === 'PAUSED' || gameManager.state === 'WIN_MENU' || gameManager.state === 'FAIL' || gameManager.state === 'END') {
+                // Skip updates, just draw static scene?
+                // Or maybe draw entities but don't update them?
+                // Let's just draw.
+            } else {
+                // ONLY UPDATE IF PLAYING
+                if (gameManager.state === 'PLAYING' || gameManager.state === 'TRANSITION') {
+                    // Updates
+                    for (let obj of movables) obj.update(dt);
+                    for (let blk of blockages) blk.update(dt);
+                    for (let door of doors) door.update(dt);
+                    for (let bell of bells) bell.update(dt);
 
-                for (let s of switches) {
-                    s.update(dt);
-                    if (s.active && s.targetId) {
-                        const door = doors.find(d => d.id === s.targetId);
-                        if (door && !door.opening) door.open();
+                    for (let s of switches) {
+                        s.update(dt);
+                        if (s.active && s.targetId) {
+                            const door = doors.find(d => d.id === s.targetId);
+                            if (door && !door.opening) door.open();
+                        }
                     }
-                }
-                for (let gap of gaps) gap.checkFilled(movables);
+                    for (let gap of gaps) gap.checkFilled(movables);
 
-                const unlockedMovables = movables.filter(m => !m.isLocked);
-                const blockedDoors = doors.filter(d => d.blocked);
-                const blockedHardBlocks = hardBlocks.filter(hb => hb.blocked); // v1.1
+                    const unlockedMovables = movables.filter(m => !m.isLocked);
+                    const blockedDoors = doors.filter(d => d.blocked);
+                    const blockedHardBlocks = hardBlocks.filter(hb => hb.blocked);
 
-                if (girl) {
-                    girl.update(dt,
-                        obstacles.concat(unlockedMovables).concat(blockedDoors).concat(blockedHardBlocks),
-                        blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
+                    if (girl) {
+                        girl.update(dt,
+                            obstacles.concat(unlockedMovables).concat(blockedDoors).concat(blockedHardBlocks),
+                            blockages, gaps, switches, collectibles, hardBlocks, girlButtons);
 
-                    // Check girl buttons (v1.1)
-                    for (let gb of girlButtons) gb.checkGirl(girl);
-                }
-
-                // Update collectibles
-                for (let col of collectibles) col.update(dt, girl);
-
-                // Update wind fatigue
-                if (wind.active) {
-                    windFatigue += FATIGUE_RATE * dt;
-                    if (windFatigue > 100) windFatigue = 100;
-
-                    wind.pushMovables(movables);
-                    wind.checkBlockages(blockages);
-                    wind.checkSwitches(switches);
-
-                    // Check hard blocks (v1.1)
-                    for (let hb of hardBlocks) hb.checkWind(wind);
-
-                    // Check bells (v1.1)
-                    for (let bell of bells) bell.checkWind(wind);
-                } else {
-                    windFatigue -= RECOVERY_RATE * dt;
-                    if (windFatigue < 0) windFatigue = 0;
-                }
-
-                // Check Win Condition (Girl reached goal)
-                // Check Win Condition (Girl reached goal)
-                // Check Win Condition (Girl reached goal)
-                if (girl && girl.state === 'REACHED_GOAL') {
-                    if (!girl.celebrating) {
-                        girl.celebrating = true;
-
-                        // Play win sound immediately
-                        if (audioSystem) audioSystem.playWin();
-
-                        // Delay dissolve to show happy expression
-                        setTimeout(() => {
-                            if (girl) girl.dissolved = true;
-                            // Spawn particles
-                            for (let i = 0; i < 30; i++) {
-                                particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fff');
-                                particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fc0');
-                            }
-                        }, 800);
-
-                        // Delay completion
-                        setTimeout(() => {
-                            const starsCollected = collectibles.filter(c => c.collected).length;
-                            if (gameManager.state !== 'TRANSITION') {
-                                gameManager.completeLevel(starsCollected);
-                            }
-                        }, 1800);
+                        for (let gb of girlButtons) gb.checkGirl(girl);
                     }
-                }
 
-                // Update HUD Stars
-                const currentStars = collectibles.filter(c => c.collected).length;
-                gameManager.updateHUD(currentStars);
+                    // Update collectibles
+                    for (let col of collectibles) col.update(dt, girl);
+
+                    // Update wind fatigue
+                    if (wind.active) {
+                        windFatigue += FATIGUE_RATE * dt;
+                        if (windFatigue > 100) windFatigue = 100;
+
+                        wind.pushMovables(movables);
+                        wind.checkBlockages(blockages);
+                        wind.checkSwitches(switches);
+                        for (let hb of hardBlocks) hb.checkWind(wind);
+                        for (let bell of bells) bell.checkWind(wind);
+                    } else {
+                        windFatigue -= RECOVERY_RATE * dt;
+                        if (windFatigue < 0) windFatigue = 0;
+                    }
+
+                    // Check Win Condition
+                    if (girl && girl.state === 'REACHED_GOAL') {
+                        if (!girl.celebrating) {
+                            girl.celebrating = true;
+                            if (audioSystem) audioSystem.playWin();
+                            setTimeout(() => {
+                                if (girl) girl.dissolved = true;
+                                for (let i = 0; i < 30; i++) {
+                                    particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fff');
+                                    particles.spawn(girl.x + GIRL_SIZE / 2, girl.y + GIRL_SIZE / 2, '#fc0');
+                                }
+                            }, 800);
+                            setTimeout(() => {
+                                const starsCollected = collectibles.filter(c => c.collected).length;
+                                if (gameManager.state !== 'TRANSITION') {
+                                    gameManager.completeLevel(starsCollected);
+                                }
+                            }, 1800);
+                        }
+                    }
+                    gameManager.updateHUD(collectibles.filter(c => c.collected).length);
+                }
             }
 
             // Draw Everything

@@ -9,7 +9,7 @@ const LEVELS_DATA = [
     ],
     "movables": [],
     "gaps": [],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
     "id": 2,
@@ -28,28 +28,10 @@ const LEVELS_DATA = [
     ],
     "movables": [],
     "gaps": [],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
     "id": 3,
-    "gridStart": { "col": 0, "row": 1 },
-    "gridExit": { "col": 3, "row": 1 },
-    "obstacles": [
-      { "col": 1, "row": 1 },
-      { "col": 0, "row": 2 }
-    ],
-    "blockages": [
-      { "col": 0, "row": 0, "type": "static", "id": 1, "revealsPath": { "waypoint": { "col": 1, "row": 0 } } },
-      { "col": 3, "row": 0, "type": "static", "id": 2 },
-      { "col": 2, "row": 1, "type": "static", "id": 3 },
-      { "col": 3, "row": 2, "type": "static", "id": 4 }
-    ],
-    "movables": [],
-    "gaps": [],
-    "switches": []
-  },
-  {
-    "id": 4,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [],
@@ -63,7 +45,7 @@ const LEVELS_DATA = [
     ]
   },
   {
-    "id": 5,
+    "id": 4,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [
@@ -76,10 +58,10 @@ const LEVELS_DATA = [
       { "col": 2, "row": 1 }
     ],
     "movables": [],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
-    "id": 6,
+    "id": 5,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [
@@ -96,10 +78,10 @@ const LEVELS_DATA = [
       { "col": 1, "row": 0, "type": "plank" },
       { "col": 1, "row": 3, "type": "plank" }
     ],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
-    "id": 7,
+    "id": 6,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [
@@ -114,10 +96,10 @@ const LEVELS_DATA = [
       { "col": 2, "row": 2 }
     ],
     "movables": [],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
-    "id": 8,
+    "id": 7,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [],
@@ -130,50 +112,34 @@ const LEVELS_DATA = [
     ],
     "movables": [],
     "gaps": [],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
+  },
+  {
+    "id": 8,
+    "gridStart": { "col": 0, "row": 1 },
+    "gridExit": { "col": 3, "row": 1 },
+    "obstacles": [
+      { "col": 2, "row": 0 },
+      { "col": 2, "row": 1 },
+      { "col": 2, "row": 2 }
+    ],
+    "blockages": [
+      { "col": 3, "row": 2, "type": "static", "id": 1 },
+      { "col": 0, "row": 3, "type": "regen" },
+      { "col": 2, "row": 3, "type": "static", "id": 2 },
+      { "col": 3, "row": 3, "type": "static", "id": 3 }
+    ],
+    "gaps": [],
+    "movables": [],
+    "switches": [],
+    "collectibles": [],
+    "doors": [],
+    "hardBlocks": [],
+    "girlButtons": [],
+    "bells": [], "quote": "The wind whispers..."
   },
   {
     "id": 9,
-    "gridStart": { "col": 0, "row": 1 },
-    "gridExit": { "col": 3, "row": 1 },
-    "obstacles": [],
-    "blockages": [
-      { "col": 2, "row": 0, "type": "static", "id": 1 },
-      { "col": 3, "row": 0, "type": "regen" },
-      { "col": 2, "row": 1, "type": "regen" },
-      { "col": 2, "row": 2, "type": "regen" },
-      { "col": 3, "row": 2, "type": "regen" },
-      { "col": 2, "row": 3, "type": "regen" },
-      { "col": 3, "row": 3, "type": "regen" }
-    ],
-    "gaps": [
-      { "col": 1, "row": 1 },
-      { "col": 1, "row": 2 },
-      { "col": 1, "row": 3 }
-    ],
-    "movables": [],
-    "switches": []
-  },
-  {
-    "id": 10,
-    "gridStart": { "col": 0, "row": 1 },
-    "gridExit": { "col": 3, "row": 1 },
-    "obstacles": [],
-    "blockages": [],
-    "gaps": [
-      { "col": 2, "row": 0 },
-      { "col": 1, "row": 1 },
-      { "col": 2, "row": 1 },
-      { "col": 2, "row": 2 },
-      { "col": 3, "row": 3 }
-    ],
-    "movables": [
-      { "col": 0, "row": 3, "type": "plank" }
-    ],
-    "switches": []
-  },
-  {
-    "id": 11,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [
@@ -187,10 +153,10 @@ const LEVELS_DATA = [
     "movables": [
       { "col": 0, "row": 0, "type": "plank" }
     ],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
-    "id": 12,
+    "id": 10,
     "gridStart": { "col": 0, "row": 1 },
     "gridExit": { "col": 3, "row": 1 },
     "obstacles": [],
@@ -203,26 +169,10 @@ const LEVELS_DATA = [
     "movables": [
       { "col": 3, "row": 3, "type": "plank" }
     ],
-    "switches": []
+    "switches": [], "quote": "The wind whispers..."
   },
   {
-    "id": 13,
-    "gridStart": { "col": 0, "row": 1 },
-    "gridExit": { "col": 3, "row": 1 },
-    "obstacles": [{ "col": 1, "row": 1 }],
-    "blockages": [
-      { "col": 2, "row": 2, "type": "static", "id": 1 },
-      { "col": 3, "row": 2, "type": "static", "id": 2 },
-      { "col": 2, "row": 3, "type": "regen" }
-    ],
-    "gaps": [],
-    "movables": [],
-    "switches": [{ "col": 3, "row": 3, "targetId": 1 }],
-    "collectibles": [{ "col": 3, "row": 0 }],
-    "doors": [{ "col": 2, "row": 0, "id": 1 }]
-  },
-  {
-    "id": 14,
+    "id": 11,
     "gridStart": { "col": 0, "row": 0 },
     "gridExit": { "col": 3, "row": 3 },
     "obstacles": [
@@ -231,7 +181,7 @@ const LEVELS_DATA = [
     "blockages": [],
     "gaps": [],
     "movables": [],
-    "switches": [],
+    "switches": [], "quote": "The wind whispers...",
     "collectibles": [
       { "col": 2, "row": 0 }
     ],
@@ -246,5 +196,32 @@ const LEVELS_DATA = [
       { "col": 3, "row": 0 },
       { "col": 0, "row": 3 }
     ]
+  },
+  {
+    "id": 12,
+    "gridStart": { "col": 0, "row": 1 },
+    "gridExit": { "col": 3, "row": 1 },
+    "obstacles": [
+      { "col": 0, "row": 0 },
+      { "col": 2, "row": 1 },
+      { "col": 2, "row": 2 },
+      { "col": 2, "row": 3 }
+    ],
+    "blockages": [
+      { "col": 1, "row": 1, "type": "iron_regen" },
+      { "col": 1, "row": 2, "type": "iron_regen" }
+    ],
+    "gaps": [],
+    "movables": [],
+    "switches": [],
+    "collectibles": [],
+    "doors": [],
+    "hardBlocks": [
+      { "col": 3, "row": 0, "id": "hb1" }
+    ],
+    "girlButtons": [
+      { "col": 0, "row": 3, "targetId": "hb1" }
+    ],
+    "bells": []
   }
-]
+];
