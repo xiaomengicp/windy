@@ -2242,7 +2242,7 @@
             if (!levelData) return;
 
             currentLevel = levelId;
-            levelIndicator.innerText = "LEVEL " + levelId;
+            // levelIndicator.innerText = "LEVEL " + levelId; // Removed as element no longer exists
 
             obstacles = [];
             blockages = [];
@@ -2483,6 +2483,7 @@
         // ===============================
         class SaveSystem {
             static save(levelId, collectedStars = 0) {
+                console.log(`Saving progress: Level ${levelId}, Stars: ${collectedStars}`);
                 const data = this.load();
                 if (levelId > data.maxLevel) {
                     data.maxLevel = levelId;
