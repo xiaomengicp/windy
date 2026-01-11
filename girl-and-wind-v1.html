@@ -471,7 +471,7 @@
                 }
             }
 
-            update(dt, obstacles, blockages, gaps, switches) {
+            update(dt, obstacles, blockages, gaps, switches, collectibles) {
                 // Update animation state
                 // 不晃动，走直线
                 // this.bobOffset = Math.sin(Date.now() / 150) * 2;
@@ -484,7 +484,7 @@
                         // Check collision with Blockages specifically to trigger "BLOCKED" state
                         // Note: updateWalking handles physics stop.
                         // If updateWalking returns true, it means we hit something.
-                        if (this.updateWalking(dt, obstacles, blockages, gaps, switches)) {
+                        if (this.updateWalking(dt, obstacles, blockages, gaps, switches, collectibles)) {
                             this.state = 'BLOCKED';
                             this.stateTimer = 0;
                             this.expression = '!';
@@ -534,7 +534,7 @@
                         this.expression = '...';
 
                         // 每次思考后都重新检查环境并尝试走
-                        this.checkEnvironment(obstacles, blockages, gaps, switches);
+                        this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles);
                         // 总是进入 HESITATE 状态，然后重新尝试走
                         this.state = 'HESITATE';
                         this.stateTimer = 0;
@@ -571,8 +571,42 @@
                 }
             }
 
-            checkEnvironment(obstacles, blockages, gaps, switches) {
+            checkEnvironment(obstacles, blockages, gaps, switches, collectibles) {
                 // 简化版：直接检查是否能到达终点，BFS 会自动找路
+
+                // PRIORITY 0: COLLECTIBLES
+                if (collectibles && collectibles.length > 0) {
+                    // Find closest uncollected and reachable
+                    let bestTarget = null;
+                    let minDist = Infinity;
+
+                    for (let col of collectibles) {
+                        if (!col.collected) {
+                            if (this.canReachGoal(col.x, col.y, obstacles, blockages, gaps)) {
+                                const dx = col.x - this.x;
+                                const dy = col.y - this.y;
+                                const d = dx * dx + dy * dy;
+                                if (d < minDist) {
+                                    minDist = d;
+                                    bestTarget = col;
+                                }
+                            }
+                        }
+                    }
+
+                    if (bestTarget) {
+                        this.stuckAtClosest = false;
+                        if (this.currentGoalX !== bestTarget.x || this.currentGoalY !== bestTarget.y) {
+                            this.currentGoalX = bestTarget.x;
+                            this.currentGoalY = bestTarget.y;
+                            this.goalX = bestTarget.x;
+                            this.goalY = bestTarget.y;
+                            this.pathQueue = [];
+                            return true;
+                        }
+                        return true; // Keep going to collectible
+                    }
+                }
 
                 // PRIORITY 1: Can I reach the FINAL GOAL?
                 if (this.canReachGoal(this.finalGoalX, this.finalGoalY, obstacles, blockages, gaps)) {
@@ -712,7 +746,7 @@
                 return false;
             }
 
-            updateWalking(dt, obstacles, blockages, gaps, switches) {
+            updateWalking(dt, obstacles, blockages, gaps, switches, collectibles) {
                 if (this.pathQueue.length === 0) return;
 
                 const target = this.pathQueue[0];
@@ -729,8 +763,11 @@
                     // 路径走完了，让状态机在下一帧处理
                     // 不要在这里直接生成新路径，避免来回晃
                     if (this.pathQueue.length === 0) {
-                        this.checkEnvironment(obstacles, blockages, gaps, switches);
-                        // 不调用 generatePath，让 planPath 在下一帧处理
+                        if (this.checkEnvironment(obstacles, blockages, gaps, switches, collectibles)) {
+                            this.state = 'THINKING'; // Found path or switch
+                        } else {
+                            this.state = 'THINKING'; // No obvious path, just think
+                        }
                     }
                     return;
                 }
@@ -994,10 +1031,16 @@
                 if (Math.abs(this.vy) < 1) this.vy = 0;
 
                 // Limits
-                if (this.x < 0) { this.x = 0; this.vx = 0; }
-                if (this.x + this.width > GAME_WIDTH) { this.x = GAME_WIDTH - this.width; this.vx = 0; }
-                if (this.y < 0) { this.y = 0; this.vy = 0; }
-                if (this.y + this.height > GAME_HEIGHT) { this.y = GAME_HEIGHT - this.height; this.vy = 0; }
+                // Limits (Grid Boundaries)
+                const minX = GRID_OFFSET_X;
+                const maxX = GRID_OFFSET_X + GRID_W * CELL_SIZE - this.width;
+                const minY = GRID_OFFSET_Y;
+                const maxY = GRID_OFFSET_Y + GRID_H * CELL_SIZE - this.height;
+
+                if (this.x < minX) { this.x = minX; this.vx = 0; }
+                if (this.x > maxX) { this.x = maxX; this.vx = 0; }
+                if (this.y < minY) { this.y = minY; this.vy = 0; }
+                if (this.y > maxY) { this.y = maxY; this.vy = 0; }
             }
 
             draw(ctx) {
@@ -2108,7 +2151,7 @@
             // 把未打开的门也当成障碍物
             const unlockedMovables = movables.filter(m => !m.isLocked);
             const blockedDoors = doors.filter(d => d.blocked);
-            if (girl) girl.update(dt, obstacles.concat(unlockedMovables).concat(blockedDoors), blockages, gaps, switches);
+            if (girl) girl.update(dt, obstacles.concat(unlockedMovables).concat(blockedDoors), blockages, gaps, switches, collectibles);
 
             // Update collectibles
             for (let col of collectibles) col.update(dt, girl);
