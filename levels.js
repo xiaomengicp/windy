@@ -44,7 +44,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "The wind whispers of beginnings..."
   },
   {
     "id": 2,
@@ -86,7 +86,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "A gentle breeze guides the way."
   },
   {
     "id": 3,
@@ -135,7 +135,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Paths diverge, but the wind knows the truth."
   },
   {
     "id": 4,
@@ -183,7 +183,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Stone and silence, broken by a breath."
   },
   {
     "id": 5,
@@ -244,7 +244,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "She dances with the unseen currents."
   },
   {
     "id": 6,
@@ -301,7 +301,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Memory fades like mist in the morning."
   },
   {
     "id": 7,
@@ -355,7 +355,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "The way forward is not always clear."
   },
   {
     "id": 8,
@@ -414,7 +414,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Strength lies in yielding to the flow."
   },
   {
     "id": 9,
@@ -472,7 +472,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Echoes of the past linger here."
   },
   {
     "id": 10,
@@ -538,7 +538,7 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "A gust of hope in a stagnant world."
   },
   {
     "id": 11,
@@ -581,7 +581,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Walls are but illusions to the wind."
   },
   {
     "id": 12,
@@ -642,7 +642,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Through the narrowest gap, freedom flows."
   },
   {
     "id": 13,
@@ -704,7 +704,7 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "The storm gathers, but she is unafraid."
   },
   {
     "id": 14,
@@ -754,7 +754,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "What was lost may yet be found."
   },
   {
     "id": 15,
@@ -808,7 +808,7 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Every blockage has a breaking point."
   },
   {
     "id": 16,
@@ -854,7 +854,7 @@ const LEVELS_DATA = [
         "row": 2
       }
     ],
-    "quote": "The wind whispers..."
+    "quote": "The iron heart yields to persistence."
   },
   {
     "id": 17,
@@ -915,7 +915,7 @@ const LEVELS_DATA = [
         "row": 3
       }
     ],
-    "quote": "The wind whispers..."
+    "quote": "Timeless ruins watch her passing."
   },
   {
     "id": 18,
@@ -972,7 +972,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "She carries the weight of the sky."
   },
   {
     "id": 19,
@@ -1079,7 +1079,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "To fly, one must first let go."
   },
   {
     "id": 20,
@@ -1102,7 +1102,7 @@ const LEVELS_DATA = [
     "movables": [],
     "gaps": [],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "The labyrinth breathes with her."
   },
   {
     "id": 21,
@@ -1145,7 +1145,7 @@ const LEVELS_DATA = [
     "movables": [],
     "gaps": [],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "Shadows lengthen, but the wind persists."
   },
   {
     "id": 22,
@@ -1175,7 +1175,7 @@ const LEVELS_DATA = [
         "targetId": 1
       }
     ],
-    "quote": "The wind whispers..."
+    "quote": "A symphony of silence and motion."
   },
   {
     "id": 23,
@@ -1210,7 +1210,7 @@ const LEVELS_DATA = [
     ],
     "movables": [],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "The unseen path is often the surest."
   },
   {
     "id": 24,
@@ -1259,7 +1259,7 @@ const LEVELS_DATA = [
       }
     ],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "She is the calm within the storm."
   },
   {
     "id": 25,
@@ -1303,7 +1303,7 @@ const LEVELS_DATA = [
     ],
     "movables": [],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "Fragments of a dream, scattered."
   },
   {
     "id": 26,
@@ -1346,7 +1346,7 @@ const LEVELS_DATA = [
     "movables": [],
     "gaps": [],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "The wind knows no boundaries."
   },
   {
     "id": 27,
@@ -1405,7 +1405,7 @@ const LEVELS_DATA = [
     "hardBlocks": [],
     "girlButtons": [],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Gravity is but a suggestion."
   },
   {
     "id": 28,
@@ -1442,7 +1442,7 @@ const LEVELS_DATA = [
       }
     ],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "In the heart of the maze, a song."
   },
   {
     "id": 29,
@@ -1478,7 +1478,7 @@ const LEVELS_DATA = [
       }
     ],
     "switches": [],
-    "quote": "The wind whispers..."
+    "quote": "She is the leaf, and she is the gale."
   },
   {
     "id": 30,
@@ -1500,7 +1500,7 @@ const LEVELS_DATA = [
     "gaps": [],
     "movables": [],
     "switches": [],
-    "quote": "The wind whispers...",
+    "quote": "The final door awaits the breath of life.",
     "collectibles": [
       {
         "col": 2,
@@ -1593,6 +1593,6 @@ const LEVELS_DATA = [
       }
     ],
     "bells": [],
-    "quote": "The wind whispers..."
+    "quote": "Beyond the horizon, the wind is free."
   }
 ];

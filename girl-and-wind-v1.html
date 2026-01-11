@@ -313,7 +313,7 @@
                 <div class="menu-options">
                     <button class="btn" id="btn-resume-pause">Resume</button>
                     <button class="btn" id="btn-restart-pause">Restart</button>
-                    <button class="btn" id="btn-menu-pause">Levels</button>
+                    <button class="btn" id="btn-menu-pause">Main Menu</button>
                 </div>
             </div>
 
@@ -322,7 +322,7 @@
                 <h2 style="color: #ff4444;">Try Again</h2>
                 <div style="font-size: 14px; margin-bottom: 30px; opacity: 0.8;">The wind needs another path.</div>
                 <div class="menu-options" style="flex-direction: row; gap: 20px;">
-                    <button class="btn" id="btn-menu-fail">Levels</button>
+                    <button class="btn" id="btn-menu-fail">Main Menu</button>
                     <button class="btn btn-primary" id="btn-retry-fail">Retry</button>
                 </div>
             </div>
@@ -334,7 +334,7 @@
                     style="margin: 20px 0; font-style: italic; opacity: 0.8; font-size: 1.2rem; max-width: 600px; text-align: center;">
                 </div>
                 <div class="menu-options" style="flex-direction: row; gap: 20px;">
-                    <button class="btn" id="btn-menu-win">Levels</button>
+                    <button class="btn" id="btn-menu-win">Main Menu</button>
                     <button class="btn" id="btn-replay">Replay</button>
                     <button class="btn btn-primary" id="btn-next-level">Next Level</button>
                 </div>
@@ -361,11 +361,11 @@
                     <p style="opacity: 0.5;">2026</p>
                 </div>
 
-                <!-- Logo Placeholder -->
+                <!-- Logo -->
                 <div
-                    style="margin-bottom: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
-                    <span style="font-size: 12px; color: #aaa;">STUDIO LOGO</span>
-                    <!-- <img src="assets/logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;"> -->
+                    style="margin-bottom: 40px; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
+                    <img src="assets/logo.png" alt="Studio Logo"
+                        style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; opacity: 0.9;">
                 </div>
 
                 <button class="btn" id="btn-back-credits">Back</button>
@@ -3112,15 +3112,15 @@
                 // Pause Menu
                 document.getElementById('btn-resume-pause').onclick = () => this.switchState('PLAYING');
                 document.getElementById('btn-restart-pause').onclick = () => this.startLevel(this.currentLevelId);
-                document.getElementById('btn-menu-pause').onclick = () => this.switchState('LEVEL_SELECT');
+                document.getElementById('btn-menu-pause').onclick = () => this.switchState('MENU');
 
                 // Fail Menu
                 document.getElementById('btn-retry-fail').onclick = () => this.startLevel(this.currentLevelId);
-                document.getElementById('btn-menu-fail').onclick = () => this.switchState('LEVEL_SELECT');
+                document.getElementById('btn-menu-fail').onclick = () => this.switchState('MENU');
 
                 // Win Menu
                 document.getElementById('btn-replay').onclick = () => this.startLevel(this.currentLevelId);
-                document.getElementById('btn-menu-win').onclick = () => this.switchState('LEVEL_SELECT');
+                document.getElementById('btn-menu-win').onclick = () => this.switchState('MENU');
 
                 // End Screen
                 document.getElementById('btn-credits').onclick = () => {
@@ -3237,11 +3237,12 @@
 
                 if (newState === 'MENU') {
                     this.screens.start.classList.add('active');
-                    if (audioSystem) audioSystem.playBGM();
+                    if (audioSystem) audioSystem.stopBGM(); // Stop BGM on Menu return
                 } else if (newState === 'LEVEL_SELECT') {
                     this.screens.gallery.classList.add('active');
                 } else if (newState === 'PLAYING') {
                     this.screens.hud.style.display = 'block';
+                    if (audioSystem) audioSystem.playBGM(); // Start BGM when playing
                 } else if (newState === 'PAUSED') {
                     this.screens.pause.classList.add('active');
                 } else if (newState === 'FAIL') {
