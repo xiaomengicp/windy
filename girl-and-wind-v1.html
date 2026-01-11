@@ -1171,15 +1171,8 @@
             }
 
             planPath(obstacles, blockages, gaps) {
-                // If queue has items, continue consuming - BUT still check if we reached goal
-                if (this.pathQueue.length > 0) {
-                    // Check if we're already at the goal (prevents walking past exit to collect stars)
-                    if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) {
-                        this.state = 'REACHED_GOAL';
-                        return;
-                    }
-                    return;
-                }
+                // If queue has items, continue consuming
+                if (this.pathQueue.length > 0) return;
 
                 // If close to goal, done
                 if (Math.abs(this.x - this.goalX) < 5 && Math.abs(this.y - this.goalY) < 5) {
